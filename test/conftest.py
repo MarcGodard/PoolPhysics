@@ -156,6 +156,22 @@ def plot_motion_timelapse(pool_physics, pool_table, request):
 
 
 @pytest.fixture
+def plot_motion_gif(pool_physics, pool_table, request):
+    show_plots, save_plots = request.config.getoption('--show-plots'), request.config.getoption('--save-plots')
+    if not (show_plots or save_plots):
+        yield
+        return
+    from utils import plot_motion_gif as plot
+    yield
+    param_str = request.node.name[len(request.node.originalname)+1:-1]
+    filename = '.'.join([request.node.originalname, param_str, 'gif'])
+    plot(pool_physics, table=pool_table,
+         title=request.node.name + ' (animation)',
+         filename=os.path.join(PLOTS_DIR, filename) if save_plots else None,
+         show=show_plots)
+
+
+@pytest.fixture
 def plot_initial_positions(pool_physics, pool_table, request):
     show_plots, save_plots = request.config.getoption('--show-plots'), request.config.getoption('--save-plots')
     if not (show_plots or save_plots):

@@ -7,6 +7,7 @@ from bisect import bisect
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
+from matplotlib.animation import FuncAnimation, PillowWriter
 
 import sys
 sys.path.append('..')
@@ -272,6 +273,85 @@ def plot_motion_timelapse(physics, table=None,
             os.makedirs(dirname, exist_ok=True)
         try:
             plt.savefig(filename, dpi=1200)
+            _logger.info('...saved figure to %s', filename)
+        except Exception as err:
+            _logger.warning('error saving figure:\n%s', err)
+    if show:
+        plt.show()
+    plt.close()
+
+
+@catches_tcl_errors
+def plot_motion_gif(physics, table=None,
+                    title=None,
+                    fps=30,
+                    t_0=None, t_1=None,
+                    filename=None,
+                    show=False,
+                    figure=None):
+    from itertools import chain
+    if table is None:
+        table = PoolTable()
+    if title is None:
+        title = "ball animation"
+    events = sorted(chain.from_iterable(physics.ball_events.values()))
+    if not events:
+        return
+    if t_0 is None:
+        t_0 = events[0].t
+    else:
+        events = [e for e in events if t_0 < e.t + e.T]
+    if t_1 is None:
+        t_1 = events[-1].t
+        if events[-1].T < float('inf'):
+            t_1 += events[-1].T
+    events = [e for e in events if e.t <= t_1]
+    if figure is None:
+        figure = plt.figure()
+
+    xlim = -0.5*table.W, 0.5*table.W
+    ylim = -0.5*table.L, 0.5*table.L
+
+    ball_colors = dict(BALL_COLORS)
+    ball_colors[0] = 'white'
+    bot = np.array(list(physics.balls_on_table), dtype=np.int32)
+
+    def init():
+        plt.title(title, fontsize='xx-small')
+        plt.xticks([]); plt.yticks([])
+        plt.gca().set_xlim(*xlim)
+        plt.gca().set_ylim(*ylim)
+        plt.gca().set_aspect('equal')
+    init()
+
+    ax = plt.gca()
+    ax.add_patch(plt.Rectangle((xlim[0], ylim[0]),
+                               xlim[1]-xlim[0], ylim[1]-ylim[0],
+                               color='#141414'))
+
+    def update(t):
+        ax.add_patch(plt.Rectangle((-0.5*table.W, -0.5*table.L),
+                                   table.W, table.L,
+                                   color='#013216'))
+        positions = physics.eval_positions(t)
+        for i in physics.balls_on_table:
+            ax.add_patch(plt.Circle(positions[i,::2], physics.ball_radius,
+                                    color=ball_colors[i],
+                                    # alpha=1.0,
+                                    linewidth=0.001,
+                                    antialiased=True))
+        return ax,
+
+    fps = 15.0
+    ani = FuncAnimation(figure, update, frames=np.linspace(t_0, t_1, int((t_1-t_0)*fps)),
+                        #init_func=init,
+                        blit=False)
+    if filename:
+        dirname = os.path.dirname(filename)
+        if not os.path.exists(dirname):
+            os.makedirs(dirname, exist_ok=True)
+        try:
+            ani.save(filename, dpi=300, writer=PillowWriter(fps=fps))
             _logger.info('...saved figure to %s', filename)
         except Exception as err:
             _logger.warning('error saving figure:\n%s', err)

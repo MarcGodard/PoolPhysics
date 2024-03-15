@@ -24,7 +24,7 @@ DEG2RAD = np.pi/180
 
 def test_strike_ball(pool_physics,
                      plot_motion_timelapse,
-                     plot_energy,
+                     plot_energy, plot_motion_gif,
                      json_serialize_events):
     physics = pool_physics
     physics.reset(balls_on_table=[0])
@@ -123,6 +123,7 @@ def test_sliding_ball_collision(pool_physics,
 def test_break(pool_physics,
                plot_motion_timelapse,
                plot_energy,
+               plot_motion_gif,
                request,
                json_serialize_events):
     physics = pool_physics
