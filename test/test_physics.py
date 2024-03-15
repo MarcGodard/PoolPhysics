@@ -166,6 +166,7 @@ def test_break(pool_physics,
 
 def test_break_hard(pool_physics,
                     plot_motion_timelapse,
+                    plot_motion_gif,
                     plot_energy,
                     request):
     physics = pool_physics

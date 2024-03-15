@@ -316,20 +316,16 @@ def plot_motion_gif(physics, table=None,
     ball_colors[0] = 'white'
     bot = np.array(list(physics.balls_on_table), dtype=np.int32)
 
-    def init():
-        plt.title(title, fontsize='xx-small')
-        plt.xticks([]); plt.yticks([])
+    plt.title(title, fontsize='xx-small')
+    plt.xticks([]); plt.yticks([])
+
+    ax = plt.gca()
+
+    def update(t):
+        ax.clear()
         plt.gca().set_xlim(*xlim)
         plt.gca().set_ylim(*ylim)
         plt.gca().set_aspect('equal')
-    init()
-
-    ax = plt.gca()
-    ax.add_patch(plt.Rectangle((xlim[0], ylim[0]),
-                               xlim[1]-xlim[0], ylim[1]-ylim[0],
-                               color='#141414'))
-
-    def update(t):
         ax.add_patch(plt.Rectangle((-0.5*table.W, -0.5*table.L),
                                    table.W, table.L,
                                    color='#013216'))
@@ -342,7 +338,6 @@ def plot_motion_gif(physics, table=None,
                                     antialiased=True))
         return ax,
 
-    fps = 15.0
     ani = FuncAnimation(figure, update, frames=np.linspace(t_0, t_1, int((t_1-t_0)*fps)),
                         #init_func=init,
                         blit=False)
