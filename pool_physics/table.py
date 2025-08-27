@@ -369,7 +369,22 @@ class PoolTable(object):
                 out[ball_num, 0] = x_positions[i]
                 out[ball_num, 2] = z_pos
         
-        # cue ball at head spot:
-        out[0,0] = 0.0
-        out[0,2] = 0.25 * length
+        # cue ball at head spot with optional random positioning
+        if spacing_mode == 'random':
+            # Set seed for reproducible positioning if provided
+            if seed is not None:
+                np.random.seed(seed + 1000)  # Offset seed to avoid correlation with ball spacing
+            
+            # Random offset up to 2.5mm in x and z directions
+            max_offset = 2.5e-3  # 2.5mm in meters
+            x_offset = np.random.uniform(-max_offset, max_offset)
+            z_offset = np.random.uniform(-max_offset, 0)  # Only move toward head rail (negative z)
+            
+            out[0, 0] = x_offset
+            out[0, 2] = 0.25 * length + z_offset  # Ensure it stays behind head string
+        else:
+            # Standard head spot position
+            out[0, 0] = 0.0
+            out[0, 2] = 0.25 * length
+        
         return out
