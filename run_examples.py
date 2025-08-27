@@ -75,52 +75,14 @@ def run_visualization_examples() -> None:
     print(f"\n📁 Generated visualizations saved to: {os.path.abspath('images/')}")
 
 
-def show_code_quality_improvements() -> None:
-    """Demonstrate code quality improvements."""
-    print("\n🔧 Code Quality Improvements")
-    print("=" * 30)
-    
-    improvements = [
-        "✅ Proper directory structure (visualizations/, utils/, tests/, debug_tools/)",
-        "✅ Type hints for all function parameters and return values", 
-        "✅ Comprehensive docstrings with Args, Returns, and Raises sections",
-        "✅ Input validation and error handling",
-        "✅ Consistent code formatting following PEP 8",
-        "✅ Modular design with reusable utility functions",
-        "✅ Enhanced ball tracking (pocketed + escaped balls)",
-        "✅ Centralized table rendering with configurable styles"
-    ]
-    
-    for improvement in improvements:
-        print(f"   {improvement}")
-
-
-def show_directory_structure() -> None:
-    """Show the cleaned-up directory structure."""
-    print("\n📁 Organized Directory Structure")  
-    print("=" * 35)
-    
-    structure = """
-    PoolPhysics/
-    ├── pool_physics/          # Core physics engine
-    ├── visualizations/        # All visualization scripts
-    ├── utils/                 # Shared utility functions  
-    ├── test/                  # Pytest-based test suite
-    ├── analyze/               # Analysis and debugging tools
-    ├── debug_tools/           # Additional debug utilities
-    ├── images/                # Generated outputs
-    └── DEVELOPMENT_GUIDE.md   # Documentation
-    """
-    
-    print(structure)
-
-
 def main() -> None:
-    """Main function demonstrating the cleaned-up codebase."""
-    show_directory_structure()
-    show_code_quality_improvements()
+    """Main function to run visualization examples."""
+    print("🎱 Pool Physics - Example Runner")
+    print("=" * 40)
+    print("This script runs example visualizations to demonstrate the physics engine.")
+    print("For complete documentation, see README.md")
     
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 40)
     response = input("Run visualization examples? (y/N): ").strip().lower()
     
     if response in ['y', 'yes']:

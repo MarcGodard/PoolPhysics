@@ -57,21 +57,19 @@ def simulate_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0,
     direction_norm = np.linalg.norm(direction)
     direction_unit = direction / direction_norm
     
-    # Set up cue ball velocity (aimed at apex ball)
-    v_0 = direction_unit * break_speed
-    omega_0 = np.array([0.0, -5.0, 0.0])  # Slight backspin initially
+    # Set up cue strike parameters
+    # Contact point slightly below center for slight draw
+    r_c = cue_ball_pos.copy()
+    r_c[1] -= physics.ball_radius * 0.1  # Hit 10% below center
     
-    # Create break event
-    break_event = BallSlidingEvent(
-        t=0.0,
-        i=0,
-        r_0=cue_ball_pos,
-        v_0=v_0,
-        omega_0=omega_0
-    )
+    # Impact velocity (cue tip velocity)
+    V = direction_unit * break_speed
     
-    print("Running break simulation...")
-    events = physics.add_event_sequence(break_event)
+    # Impact mass (effective mass of cue stick)
+    M = 0.54  # Standard cue stick effective mass in kg
+    
+    print("Running break simulation with cue strike...")
+    events = physics.strike_ball(0.0, 0, cue_ball_pos, r_c, V, M)
     
     # Capture positions at specified intervals
     time_snapshots = []

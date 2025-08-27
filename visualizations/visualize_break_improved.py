@@ -93,28 +93,25 @@ def simulate_break(
         
     direction_unit = direction / direction_norm
     
-    # Set up cue ball velocity (aimed at apex ball)
-    v_0 = direction_unit * break_speed
+    # Set up cue strike parameters
+    # Contact point slightly below center for slight draw
+    r_c = cue_ball_pos.copy()
+    r_c[1] -= physics.ball_radius * 0.1  # Hit 10% below center
     
-    # Add slight backspin for realistic break shot
-    omega_0 = np.array([0.0, -5.0, 0.0])
+    # Impact velocity (cue tip velocity)
+    V = direction_unit * break_speed
     
-    # Create and execute break event
-    break_event = BallSlidingEvent(
-        t=0.0,
-        i=0,
-        r_0=cue_ball_pos,
-        v_0=v_0,
-        omega_0=omega_0
-    )
+    # Impact mass (effective mass of cue stick)
+    M = 0.54  # Standard cue stick effective mass in kg
     
     print(f"Break direction: {direction_unit}")
-    print(f"Break velocity: {v_0}")
-    print(f"Initial spin: {omega_0}")
+    print(f"Contact point: {r_c}")
+    print(f"Impact velocity: {V}")
+    print(f"Impact mass: {M}")
     
-    # Run simulation
-    print("Running break simulation...")
-    events = physics.add_event_sequence(break_event)
+    # Run simulation using realistic cue strike
+    print("Running break simulation with cue strike...")
+    events = physics.strike_ball(0.0, 0, cue_ball_pos, r_c, V, M)
     
     print(f"Generated {len(events)} events")
     
