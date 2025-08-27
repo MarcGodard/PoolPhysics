@@ -26,7 +26,7 @@ def run_visualization_examples() -> None:
     
     examples = [
         {
-            'name': '9-Ball Break Visualization',
+            'name': '9-Ball Break Visualization (Improved)',
             'script': 'visualizations/visualize_break_improved.py',
             'args': ['9-ball', '12'],
             'description': 'Shows before/after comparison with pocketed balls displayed below table'
@@ -36,6 +36,36 @@ def run_visualization_examples() -> None:
             'script': 'visualizations/visualize_break_timelapse.py',
             'args': ['8-ball', '12', '4', '0.5'],
             'description': 'Time-series snapshots showing ball movement over time'
+        },
+        {
+            'name': '8-Ball Break Comparison (Basic)',
+            'script': 'visualizations/visualize_break.py',
+            'args': ['8-ball', '12'],
+            'description': 'Basic break visualization with before/after comparison'
+        },
+        {
+            'name': '10-Ball Break with Random Spacing',
+            'script': 'visualizations/visualize_break_improved.py',
+            'args': ['10-ball', '14', 'random', '42'],
+            'description': 'Break shot with reproducible random ball spacing'
+        },
+        {
+            'name': '9-Ball Rack Visualization',
+            'script': 'visualizations/visualize_rack.py',
+            'args': ['9-ball', 'tight'],
+            'description': 'Shows rack arrangement with tight ball spacing'
+        },
+        {
+            'name': '8-Ball Timelapse (Extended)',
+            'script': 'visualizations/visualize_break_timelapse.py',
+            'args': ['8-ball', '15', '6', '0.3'],
+            'description': 'Extended timelapse with 6 snapshots at higher break speed'
+        },
+        {
+            'name': '10-Ball Rack (Fixed Spacing)',
+            'script': 'visualizations/visualize_rack.py',
+            'args': ['10-ball', 'fixed'],
+            'description': 'Shows 10-ball rack with fixed ball spacing'
         }
     ]
     
