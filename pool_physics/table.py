@@ -1,3 +1,4 @@
+from typing import Optional, Literal
 import os.path
 import logging
 _logger = logging.getLogger(__name__)
@@ -19,43 +20,43 @@ class PoolTable(object):
     
     def __init__(self,
                  # Table dimensions (WPA standard 9-foot table: 100" x 50")
-                 L=100*INCH2METER,           # Table length (100 inches = 2.54m)
-                 H=29.25*INCH2METER,         # Table height from floor (29.25 inches)
-                 W=None,                     # Table width (defaults to L/2 = 50 inches)
+                 L: float = 100*INCH2METER,           # Table length (100 inches = 2.54m)
+                 H: float = 29.25*INCH2METER,         # Table height from floor (29.25 inches)
+                 W: Optional[float] = None,                     # Table width (defaults to L/2 = 50 inches)
                  
                  # Rail geometry parameters
-                 ell_1=0.5*INCH2METER,       # Inner rail width (0.5")
-                 ell_2=1.5*INCH2METER,       # Outer rail width (1.5")
-                 h=1.575*INCH2METER,         # Rail height above playing surface
-                 h_Q=1.625*INCH2METER,       # Rail height at contact point
-                 r_P=0.1*INCH2METER,         # Rail corner radius
-                 delta_QP=0.25*INCH2METER,   # Rail contact point offset
-                 delta_PT=0.25*INCH2METER,   # Rail transition offset
-                 a=1.75*INCH2METER,          # Rail angle parameter
-                 A=60*DEG2RAD,               # Rail angle A (60 degrees)
-                 C=60*DEG2RAD,               # Rail angle C (60 degrees)
+                 ell_1: float = 0.5*INCH2METER,       # Inner rail width (0.5")
+                 ell_2: float = 1.5*INCH2METER,       # Outer rail width (1.5")
+                 h: float = 1.575*INCH2METER,         # Rail height above playing surface
+                 h_Q: float = 1.625*INCH2METER,       # Rail height at contact point
+                 r_P: float = 0.1*INCH2METER,         # Rail corner radius
+                 delta_QP: float = 0.25*INCH2METER,   # Rail contact point offset
+                 delta_PT: float = 0.25*INCH2METER,   # Rail transition offset
+                 a: float = 1.75*INCH2METER,          # Rail angle parameter
+                 A: float = 60*DEG2RAD,               # Rail angle A (60 degrees)
+                 C: float = 60*DEG2RAD,               # Rail angle C (60 degrees)
                  
                  # Corner pocket geometry (WPA specifications)
-                 M_cp=7.5*INCH2METER,        # Corner pocket mouth width (7.5")
-                 T_cp=4*INCH2METER,          # Corner pocket throat width (4")
-                 S_cp=1.75*INCH2METER,       # Corner pocket shelf depth
-                 D_cp=2.5*INCH2METER,        # Corner pocket drop depth
-                 r_cpc=2.625*INCH2METER,     # Corner pocket center radius
-                 r_cpd=0.1875*INCH2METER,    # Corner pocket drop radius
+                 M_cp: float = 7.5*INCH2METER,        # Corner pocket mouth width (7.5")
+                 T_cp: float = 4*INCH2METER,          # Corner pocket throat width (4")
+                 S_cp: float = 1.75*INCH2METER,       # Corner pocket shelf depth
+                 D_cp: float = 2.5*INCH2METER,        # Corner pocket drop depth
+                 r_cpc: float = 2.625*INCH2METER,     # Corner pocket center radius
+                 r_cpd: float = 0.1875*INCH2METER,    # Corner pocket drop radius
                  
                  # Side pocket geometry (WPA specifications)
-                 M_sp=6.5*INCH2METER,        # Side pocket mouth width (6.5")
-                 T_sp=4.25*INCH2METER,       # Side pocket throat width (4.25")
-                 S_sp=0,                     # Side pocket shelf depth (flush)
-                 D_sp=1.25*INCH2METER,       # Side pocket drop depth
-                 r_spc=2*INCH2METER,         # Side pocket center radius
-                 r_spd=0.1875*INCH2METER,    # Side pocket drop radius
+                 M_sp: float = 6.5*INCH2METER,        # Side pocket mouth width (6.5")
+                 T_sp: float = 4.25*INCH2METER,       # Side pocket throat width (4.25")
+                 S_sp: float = 0,                     # Side pocket shelf depth (flush)
+                 D_sp: float = 1.25*INCH2METER,       # Side pocket drop depth
+                 r_spc: float = 2*INCH2METER,         # Side pocket center radius
+                 r_spd: float = 0.1875*INCH2METER,    # Side pocket drop radius
                  
                  # Ball and rail parameters
-                 width_rail=None,            # Total rail width (auto-calculated)
-                 ball_radius=1.125*INCH2METER,  # Standard ball radius (2.25" diameter)
-                 num_balls=16,               # Total number of balls (cue + 15 object)
-                 **kwargs):
+                 width_rail: Optional[float] = None,            # Total rail width (auto-calculated)
+                 ball_radius: float = 1.125*INCH2METER,  # Standard ball radius (2.25" diameter)
+                 num_balls: int = 16,               # Total number of balls (cue + 15 object)
+                 ) -> None:
         # Store table dimensions
         self.L = L  # Table length
         self.H = H  # Table height from floor
@@ -167,7 +168,7 @@ class PoolTable(object):
         self.pocket_positions[2, ::2] = [ self.W/2,  0.0]       # Right side pocket
         self.pocket_positions[5, ::2] = [-self.W/2,  0.0]       # Left side pocket
 
-    def corner_to_pocket(self, i_c):
+    def corner_to_pocket(self, i_c: int) -> int:
         """
         Convert a corner index to the corresponding pocket index.
         
@@ -182,7 +183,7 @@ class PoolTable(object):
         """
         return (i_c + 2) % 24 // 4
 
-    def pocket_to_corner(self, i_p):
+    def pocket_to_corner(self, i_p: int) -> int:
         """
         Convert a pocket index to its corresponding primary corner index.
         
@@ -197,7 +198,7 @@ class PoolTable(object):
         """
         return i_p * 4 - 2
 
-    def is_position_in_bounds(self, r):
+    def is_position_in_bounds(self, r: np.ndarray) -> bool:
         """
         Check if a position is within the playing surface boundaries.
         
@@ -213,7 +214,7 @@ class PoolTable(object):
         return  -0.5*self.W + R <= r[0] <= 0.5*self.W - R \
             and -0.5*self.L + R <= r[2] <= 0.5*self.L - R
 
-    def is_position_near_pocket(self, r):
+    def is_position_near_pocket(self, r: np.ndarray) -> Optional[int]:
         """
         Check if a position is near any of the corner pockets.
         
@@ -248,7 +249,13 @@ class PoolTable(object):
                 _logger.info('corner pocket 3')
                 return 4
 
-    def calc_racked_positions(self, rack_type='8-ball', d=None, spacing_mode='random', seed=None, out=None):
+    def calc_racked_positions(self, 
+                                rack_type: Literal['8-ball', '9-ball', '10-ball'] = '8-ball',
+                                d: Optional[float] = None,
+                                spacing_mode: Literal['random', 'fixed', 'tight', 'uniform'] = 'random',
+                                seed: Optional[int] = None,
+                                out: Optional[np.ndarray] = None
+                                ) -> np.ndarray:
         """
         Calculate racked positions for different pool games
         
