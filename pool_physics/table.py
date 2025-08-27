@@ -191,10 +191,10 @@ class PoolTable(object):
         elif r[0] > 0.5*self.W - self.M_cp/np.sqrt(2):
             if r[2] < -0.5*self.L + self.M_cp/np.sqrt(2):
                 _logger.info('corner pocket 2')
-                return 2
+                return 3
             elif r[2] > 0.5*self.L - self.M_cp/np.sqrt(2):
                 _logger.info('corner pocket 3')
-                return 3
+                return 4
 
     def calc_racked_positions(self, rack_type='8-ball', d=None, spacing_mode='random', seed=None, out=None):
         """
