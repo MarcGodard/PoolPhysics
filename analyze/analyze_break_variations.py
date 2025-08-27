@@ -26,7 +26,7 @@ def _get_balls_for_rack_type(rack_type: str) -> List[int]:
         return list(range(16))  # Balls 0-15
 
 
-def run_break_simulation(rack_type='8-ball', break_speed=12.0, max_time=10.0):
+def run_break_simulation(rack_type='8-ball', break_speed=12.0, max_time=10.0, spacing_mode='random', seed=None):
     """
     Run a single break simulation and return statistics.
     
@@ -34,6 +34,8 @@ def run_break_simulation(rack_type='8-ball', break_speed=12.0, max_time=10.0):
         rack_type: Type of rack ('8-ball', '9-ball', '10-ball')
         break_speed: Break shot speed in m/s
         max_time: Maximum simulation time in seconds
+        spacing_mode: 'random', 'fixed', or 'uniform' spacing mode
+        seed: Random seed for reproducible spacing (only used with 'random' mode)
         
     Returns:
         dict: Statistics from the break simulation
@@ -43,7 +45,7 @@ def run_break_simulation(rack_type='8-ball', break_speed=12.0, max_time=10.0):
     table = PoolTable()
     
     # Get rack positions for specified rack type
-    initial_positions = table.calc_racked_positions(rack_type=rack_type)
+    initial_positions = table.calc_racked_positions(rack_type=rack_type, spacing_mode=spacing_mode, seed=seed)
     
     # Determine which balls are on table based on rack type
     balls_on_table = _get_balls_for_rack_type(rack_type)
@@ -125,7 +127,7 @@ def run_break_simulation(rack_type='8-ball', break_speed=12.0, max_time=10.0):
     }
 
 
-def analyze_break_variations(rack_type='8-ball', break_speed=12.0, num_runs=10):
+def analyze_break_variations(rack_type='8-ball', break_speed=12.0, num_runs=10, spacing_mode='random', seed_base=None):
     """
     Run multiple break simulations and analyze the variations.
     
@@ -133,10 +135,21 @@ def analyze_break_variations(rack_type='8-ball', break_speed=12.0, num_runs=10):
         rack_type: Type of rack to analyze
         break_speed: Break shot speed in m/s
         num_runs: Number of simulations to run
+        spacing_mode: 'random', 'fixed', or 'uniform' spacing mode
+        seed_base: Base seed for reproducible runs (incremented for each run)
     """
     print(f"🎱 Break Variation Analysis - {rack_type.title()}")
     print("=" * 60)
-    print(f"Running {num_runs} simulations with random spacing (0.01-0.2mm)...")
+    
+    if spacing_mode == 'fixed':
+        print(f"Running {num_runs} simulations with fixed 0.1mm spacing...")
+    elif spacing_mode == 'random':
+        if seed_base is not None:
+            print(f"Running {num_runs} simulations with seeded random spacing (seed base: {seed_base})...")
+        else:
+            print(f"Running {num_runs} simulations with random spacing (0.01-0.2mm)...")
+    else:
+        print(f"Running {num_runs} simulations with {spacing_mode} spacing...")
     print()
     
     results = []
@@ -145,7 +158,9 @@ def analyze_break_variations(rack_type='8-ball', break_speed=12.0, num_runs=10):
     for i in range(num_runs):
         print(f"Run {i+1:2d}...", end=" ", flush=True)
         try:
-            result = run_break_simulation(rack_type, break_speed)
+            # Use incremental seeds for reproducible but varied runs
+            run_seed = seed_base + i if seed_base is not None else None
+            result = run_break_simulation(rack_type, break_speed, spacing_mode=spacing_mode, seed=run_seed)
             results.append(result)
             print("✅")
         except Exception as e:
@@ -213,12 +228,16 @@ def main():
         rack_type = sys.argv[1]
         break_speed = float(sys.argv[2]) if len(sys.argv) > 2 else 12.0
         num_runs = int(sys.argv[3]) if len(sys.argv) > 3 else 10
+        spacing_mode = sys.argv[4] if len(sys.argv) > 4 else 'random'
+        seed_base = int(sys.argv[5]) if len(sys.argv) > 5 else None
     else:
         rack_type = '8-ball'
         break_speed = 12.0
         num_runs = 10
+        spacing_mode = 'random'
+        seed_base = None
     
-    analyze_break_variations(rack_type, break_speed, num_runs)
+    analyze_break_variations(rack_type, break_speed, num_runs, spacing_mode, seed_base)
 
 
 if __name__ == "__main__":

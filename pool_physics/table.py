@@ -196,21 +196,37 @@ class PoolTable(object):
                 _logger.info('corner pocket 3')
                 return 3
 
-    def calc_racked_positions(self, rack_type='8-ball', d=None, out=None):
+    def calc_racked_positions(self, rack_type='8-ball', d=None, spacing_mode='random', seed=None, out=None):
         """
         Calculate racked positions for different pool games
         
         Args:
             rack_type: '8-ball', '9-ball', or '10-ball'
-            d: spacing between balls (default: random 0.01-0.2mm gap)
+            d: spacing between balls (overrides spacing_mode if provided)
+            spacing_mode: 'random', 'fixed', or 'uniform'
+                - 'random': random 0.01-0.2mm gap (default)
+                - 'fixed': exactly 0.1mm gap for all balls
+                - 'uniform': use provided d value for all balls
+            seed: random seed for reproducible spacing (only used with 'random' mode)
             out: output array (default: create new array)
         """
         if out is None:
             out = np.empty((self.num_balls, 3), dtype=np.float64)
         ball_radius = self.ball_radius
+        
         if d is None:
-            # Random gap between 0.01mm and 0.2mm (converted to meters)
-            d = np.random.uniform(0.01e-3, 0.2e-3)
+            if spacing_mode == 'fixed':
+                # Fixed 0.1mm spacing for controlled tests
+                d = 0.1e-3
+            elif spacing_mode == 'random':
+                # Set seed for reproducible random spacing
+                if seed is not None:
+                    np.random.seed(seed)
+                # Random gap between 0.01mm and 0.2mm (converted to meters)
+                d = np.random.uniform(0.01e-3, 0.2e-3)
+            else:  # spacing_mode == 'uniform' or fallback
+                # Default to 0.1mm if no d provided
+                d = 0.1e-3
         length = self.L
         ball_diameter = 2*ball_radius
         

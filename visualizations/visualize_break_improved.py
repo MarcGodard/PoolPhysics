@@ -31,7 +31,9 @@ from utils.table_renderer import draw_pool_table, draw_pocketed_balls
 
 def simulate_break(
     rack_type: str = '8-ball', 
-    break_speed: float = 12.0
+    break_speed: float = 12.0,
+    spacing_mode: str = 'random',
+    seed: int = None
 ) -> Tuple[PoolPhysics, NDArray[np.floating], NDArray[np.floating], List[Any], List[int]]:
     """
     Simulate a pool break shot for the given rack type.
@@ -42,7 +44,9 @@ def simulate_break(
     
     Args:
         rack_type: Type of rack ('8-ball', '9-ball', or '10-ball').
-        break_speed: Initial speed of cue ball in m/s.
+        break_speed: Speed of the break shot in m/s.
+        spacing_mode: Ball spacing mode ('random', 'fixed', or 'uniform').
+        seed: Random seed for reproducible spacing (only used with 'random' mode).
         
     Returns:
         Tuple containing:
@@ -67,7 +71,7 @@ def simulate_break(
     table = PoolTable()
     
     # Get rack positions for specified rack type
-    initial_positions = table.calc_racked_positions(rack_type=rack_type)
+    initial_positions = table.calc_racked_positions(rack_type=rack_type, spacing_mode=spacing_mode, seed=seed)
     
     # Determine which balls are on table based on rack type
     balls_on_table = _get_balls_for_rack_type(rack_type)
@@ -133,7 +137,9 @@ def _get_balls_for_rack_type(rack_type: str) -> List[int]:
 
 def visualize_break_comparison(
     rack_type: str = '8-ball', 
-    break_speed: float = 12.0
+    break_speed: float = 12.0,
+    spacing_mode: str = 'random',
+    seed: int = None
 ) -> Tuple[PoolPhysics, List[Any]]:
     """
     Create before/after visualization of break shot.
@@ -144,6 +150,8 @@ def visualize_break_comparison(
     Args:
         rack_type: Type of rack ('8-ball', '9-ball', or '10-ball').
         break_speed: Initial speed of cue ball in m/s.
+        spacing_mode: Ball spacing mode ('random', 'fixed', or 'tight').
+        seed: Random seed for reproducible spacing (only used with 'random' mode).
         
     Returns:
         Tuple containing:
@@ -152,7 +160,7 @@ def visualize_break_comparison(
     """
     # Run simulation
     physics, initial_pos, final_pos, events, balls_on_table = simulate_break(
-        rack_type, break_speed
+        rack_type, break_speed, spacing_mode, seed
     )
     table = PoolTable()
     

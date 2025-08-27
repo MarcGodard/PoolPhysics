@@ -13,13 +13,15 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.table_renderer import draw_pool_table, draw_balls, draw_pocketed_balls
 
-def simulate_break(rack_type='8-ball', break_speed=12.0):
+def simulate_break(rack_type='8-ball', break_speed=12.0, spacing_mode='random', seed=None):
     """
     Simulate a break shot for the given rack type
     
     Args:
         rack_type: '8-ball', '9-ball', or '10-ball'
         break_speed: cue ball speed in m/s
+        spacing_mode: Ball spacing mode ('random', 'fixed', or 'tight')
+        seed: Random seed for reproducible spacing (only used with 'random' mode)
     """
     print(f"\nSimulating {rack_type} break at {break_speed} m/s...")
     
@@ -28,7 +30,7 @@ def simulate_break(rack_type='8-ball', break_speed=12.0):
     table = PoolTable()
     
     # Get rack positions
-    initial_positions = table.calc_racked_positions(rack_type=rack_type)
+    initial_positions = table.calc_racked_positions(rack_type=rack_type, spacing_mode=spacing_mode, seed=seed)
     
     # Determine which balls are on table based on rack type
     if rack_type == '9-ball':
@@ -85,11 +87,11 @@ def simulate_break(rack_type='8-ball', break_speed=12.0):
     
     return physics, initial_positions, final_positions, events, balls_on_table
 
-def visualize_break_comparison(rack_type='8-ball', break_speed=12.0):
+def visualize_break_comparison(rack_type='8-ball', break_speed=12.0, spacing_mode='random', seed=None):
     """Create before/after visualization of break shot"""
     
     # Run simulation
-    physics, initial_pos, final_pos, events, balls_on_table = simulate_break(rack_type, break_speed)
+    physics, initial_pos, final_pos, events, balls_on_table = simulate_break(rack_type, break_speed, spacing_mode, seed)
     table = PoolTable()
     
     # Create figure with before/after subplots
@@ -217,13 +219,13 @@ def visualize_break_comparison(rack_type='8-ball', break_speed=12.0):
     
     return physics, events
 
-def visualize_all_breaks(break_speed=12.0):
+def visualize_all_breaks(break_speed=12.0, spacing_mode='random', seed=None):
     """Visualize break shots for all rack types"""
     for rack_type in ['8-ball', '9-ball', '10-ball']:
         print(f"\n{'='*60}")
         print(f"Generating {rack_type} break visualization...")
         print(f"{'='*60}")
-        visualize_break_comparison(rack_type, break_speed)
+        visualize_break_comparison(rack_type, break_speed, spacing_mode, seed)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

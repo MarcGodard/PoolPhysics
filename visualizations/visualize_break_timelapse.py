@@ -13,7 +13,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.table_renderer import draw_pool_table, draw_balls, draw_pocketed_balls
 
-def simulate_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0, time_interval=0.25):
+def simulate_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0, time_interval=0.25, spacing_mode='random', seed=None):
     """
     Simulate a break shot and capture positions at regular intervals
     
@@ -22,6 +22,8 @@ def simulate_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0,
         break_speed: cue ball speed in m/s
         max_time: maximum simulation time in seconds
         time_interval: time interval between snapshots in seconds
+        spacing_mode: Ball spacing mode ('random', 'fixed', or 'tight')
+        seed: Random seed for reproducible spacing (only used with 'random' mode)
     """
     print(f"\nSimulating {rack_type} break timelapse at {break_speed} m/s...")
     
@@ -30,7 +32,7 @@ def simulate_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0,
     table = PoolTable()
     
     # Get rack positions
-    initial_positions = table.calc_racked_positions(rack_type=rack_type)
+    initial_positions = table.calc_racked_positions(rack_type=rack_type, spacing_mode=spacing_mode, seed=seed)
     
     # Determine which balls are on table based on rack type
     if rack_type == '9-ball':
@@ -218,13 +220,13 @@ def visualize_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0
     
     return physics, events
 
-def visualize_all_break_timelapses(break_speed=12.0, max_time=6.0, time_interval=0.25):
+def visualize_all_break_timelapses(break_speed=12.0, max_time=6.0, time_interval=0.25, spacing_mode='random', seed=None):
     """Visualize break timelapse for all rack types"""
     for rack_type in ['8-ball', '9-ball', '10-ball']:
         print(f"\n{'='*60}")
         print(f"Generating {rack_type} break timelapse...")
         print(f"{'='*60}")
-        visualize_break_timelapse(rack_type, break_speed, max_time, time_interval)
+        visualize_break_timelapse(rack_type, break_speed, max_time, time_interval, spacing_mode, seed)
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
