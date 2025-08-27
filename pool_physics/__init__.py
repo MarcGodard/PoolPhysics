@@ -128,10 +128,36 @@ class PoolPhysics(object):
         corners[...,::2] = table._corners
         self._corners = corners
         tangents = [(c1 - c0) / np.linalg.norm(c1 - c0) for c0, c1 in zip(corners[:-1], corners[1:])]
-        self._segments = tuple(
+        # Add continuous rail segments for reliable collision detection (FIRST PRIORITY)
+        W, L, H = table.W, table.L, table.H
+        R = self.ball_radius
+        
+        # Full-length rail segments (simplified, no pocket cutouts)
+        # Use ball_radius height to match ball collision detection
+        rail_height = H + R
+        continuous_segments = [
+            # Bottom rail (Z = -L/2)
+            (np.array([-W/2, rail_height, -L/2]), np.array([W/2, rail_height, -L/2]), 
+             np.array([0, 0, 1]), np.array([1, 0, 0])),
+            # Top rail (Z = +L/2) 
+            (np.array([W/2, rail_height, L/2]), np.array([-W/2, rail_height, L/2]),
+             np.array([0, 0, -1]), np.array([-1, 0, 0])),
+            # Right rail (X = +W/2)
+            (np.array([W/2, rail_height, -L/2]), np.array([W/2, rail_height, L/2]),
+             np.array([-1, 0, 0]), np.array([0, 0, 1])),
+            # Left rail (X = -W/2)
+            (np.array([-W/2, rail_height, L/2]), np.array([-W/2, rail_height, -L/2]),
+             np.array([1, 0, 0]), np.array([0, 0, -1]))
+        ]
+        
+        # Original pocket-aware segments (SECOND PRIORITY)
+        pocket_segments = tuple(
             (corners[i], corners[i+1], cross(tangents[i], _k), tangents[i])
             for i in (0,1,2,4,5,6,8,9,10,12,13,14,16,17,18,20,21,22)
         )
+        
+        # Combine with continuous segments first (higher priority)
+        self._segments = tuple(continuous_segments) + pocket_segments
         self._velocity_meshes = None
         self._angular_velocity_meshes = None
         if ball_collision_model_kwargs:
@@ -499,9 +525,12 @@ class PoolPhysics(object):
         for i_c, r_c in enumerate(self._corners):
             tau = self._find_corner_collision_time(r_c, e_i, tau_min)
             if 0 < tau < tau_min:
-                seg_min = None
-                cor_min = i_c
-                tau_min = tau
+                # Only override segment collision if no continuous rail segment was found
+                # Continuous rail segments are the first 4 segments (indices 0-3)
+                if seg_min is None or seg_min >= 4:
+                    seg_min = None
+                    cor_min = i_c
+                    tau_min = tau
         if seg_min is not None:
             return e_i.t + tau_min, e_i, seg_min
         if cor_min is not None:
