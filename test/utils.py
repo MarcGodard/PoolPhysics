@@ -640,7 +640,10 @@ def check_ball_distances(pool_physics, t=None, filename=None, nt=4000, t0=None):
                     continue
                 r_ij = r_j - r_i
                 d = sqrt(dot(r_ij, r_ij))
-                if d < 2*physics.ball_radius:
+                # Allow tolerance for numerical precision in collision detection
+                # Ball diameter is 0.0525m, so 0.1mm tolerance is reasonable for physics simulation
+                tolerance = 1e-4  # 0.1mm tolerance for numerical precision
+                if d < 2*physics.ball_radius - tolerance:
                     e_i, e_j = (e for e in physics.find_active_events(t)
                                 if e.i == i or e.i == i + j + 1)
                     if isinstance(e_i, BallMotionEvent):

@@ -545,6 +545,9 @@ class PoolPhysics(object):
         if DD < 0:
             return -1.0, -1.0
         D = sqrt(DD)
+        # Avoid division by zero
+        if abs(A) < 1e-15:
+            return -1.0, -1.0
         tau_p = 0.5 * (-B + D) / A
         tau_n = 0.5 * (-B - D) / A
         return tau_n, tau_p
