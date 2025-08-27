@@ -202,15 +202,15 @@ class PoolTable(object):
         
         Args:
             rack_type: '8-ball', '9-ball', or '10-ball'
-            d: spacing between balls (default: random 0.01-0.5mm gap)
+            d: spacing between balls (default: random 0.01-0.2mm gap)
             out: output array (default: create new array)
         """
         if out is None:
             out = np.empty((self.num_balls, 3), dtype=np.float64)
         ball_radius = self.ball_radius
         if d is None:
-            # Random gap between 0.01mm and 0.5mm (converted to meters)
-            d = np.random.uniform(0.01e-3, 0.5e-3)
+            # Random gap between 0.01mm and 0.2mm (converted to meters)
+            d = np.random.uniform(0.01e-3, 0.2e-3)
         length = self.L
         ball_diameter = 2*ball_radius
         
