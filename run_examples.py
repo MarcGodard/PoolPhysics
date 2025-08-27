@@ -105,10 +105,11 @@ def show_directory_structure() -> None:
     ├── pool_physics/          # Core physics engine
     ├── visualizations/        # All visualization scripts
     ├── utils/                 # Shared utility functions  
-    ├── tests/                 # New test organization
-    ├── debug_tools/          # Debug and analysis tools
-    ├── images/               # Generated outputs
-    └── DEVELOPMENT_GUIDE.md  # Documentation
+    ├── test/                  # Pytest-based test suite
+    ├── analyze/               # Analysis and debugging tools
+    ├── debug_tools/           # Additional debug utilities
+    ├── images/                # Generated outputs
+    └── DEVELOPMENT_GUIDE.md   # Documentation
     """
     
     print(structure)
