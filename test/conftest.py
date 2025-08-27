@@ -60,7 +60,7 @@ def pool_table():
 @pytest.fixture
 def pool_physics(pool_table, request, ball_collision_model):
     from pool_physics import PoolPhysics
-    return PoolPhysics(initial_positions=pool_table.calc_racked_positions(),
+    return PoolPhysics(initial_positions=pool_table.calc_racked_positions(spacing_mode='tight'),
                        ball_collision_model=ball_collision_model)
 
 

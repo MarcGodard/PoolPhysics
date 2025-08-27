@@ -216,14 +216,17 @@ class PoolTable(object):
         
         if d is None:
             if spacing_mode == 'fixed':
-                # Fixed 0.1mm spacing for controlled tests
-                d = 0.1e-3
+                # Fixed 0.5mm spacing for controlled tests (larger to prevent penetration)
+                d = 0.5e-3
             elif spacing_mode == 'random':
                 # Set seed for reproducible random spacing
                 if seed is not None:
                     np.random.seed(seed)
                 # Random gap between 0.01mm and 0.2mm (converted to meters)
                 d = np.random.uniform(0.01e-3, 0.2e-3)
+            elif spacing_mode == 'tight':
+                # Tight spacing (balls touching) for tests - original behavior
+                d = 0.0
             else:  # spacing_mode == 'uniform' or fallback
                 # Default to 0.1mm if no d provided
                 d = 0.1e-3
