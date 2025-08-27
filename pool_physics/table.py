@@ -168,19 +168,71 @@ class PoolTable(object):
         self.pocket_positions[5, ::2] = [-self.W/2,  0.0]       # Left side pocket
 
     def corner_to_pocket(self, i_c):
+        """
+        Convert a corner index to the corresponding pocket index.
+        
+        The table's rail system is defined by 24 corner points. This method maps
+        these corner indices to the 6 standard pocket indices (0-5).
+        
+        Args:
+            i_c (int): Corner index (0-23)
+            
+        Returns:
+            int: Pocket index (0-5) corresponding to the given corner
+        """
         return (i_c + 2) % 24 // 4
 
     def pocket_to_corner(self, i_p):
+        """
+        Convert a pocket index to its corresponding primary corner index.
+        
+        Each pocket is associated with 4 corner points. This method returns
+        the index of the primary corner point for a given pocket.
+        
+        Args:
+            i_p (int): Pocket index (0-5)
+            
+        Returns:
+            int: The primary corner index (0-23) for the given pocket
+        """
         return i_p * 4 - 2
 
     def is_position_in_bounds(self, r):
-        """ r: position vector; R: ball radius """
+        """
+        Check if a position is within the playing surface boundaries.
+        
+        Considers the ball radius to ensure the entire ball is within bounds.
+        
+        Args:
+            r (numpy.ndarray): 3D position vector [x, y, z] to check
+            
+        Returns:
+            bool: True if the position is within bounds, False otherwise
+        """
         R = self._almost_ball_radius
         return  -0.5*self.W + R <= r[0] <= 0.5*self.W - R \
             and -0.5*self.L + R <= r[2] <= 0.5*self.L - R
 
     def is_position_near_pocket(self, r):
-        """ r: position vector; R: ball radius """
+        """
+        Check if a position is near any of the corner pockets.
+        
+        Determines if a ball is close enough to a corner pocket to be considered
+        potentially pocketed. Only checks corner pockets, not side pockets.
+        
+        Args:
+            r (numpy.ndarray): 3D position vector [x, y, z] to check
+            
+        Returns:
+            int or None: Pocket index (0-3) if near a corner pocket, None otherwise
+            
+        Note:
+            Pocket indices:
+            - 0: Bottom-left corner pocket
+            - 1: Bottom-right corner pocket
+            - 2: Top-right corner pocket
+            - 3: Top-left corner pocket
+        """
         if r[0] < -0.5*self.W + self.M_cp/np.sqrt(2):
             if r[2] < -0.5*self.L + self.M_cp/np.sqrt(2):
                 _logger.info('corner pocket 0')
@@ -191,10 +243,10 @@ class PoolTable(object):
         elif r[0] > 0.5*self.W - self.M_cp/np.sqrt(2):
             if r[2] < -0.5*self.L + self.M_cp/np.sqrt(2):
                 _logger.info('corner pocket 2')
-                return 2
+                return 3
             elif r[2] > 0.5*self.L - self.M_cp/np.sqrt(2):
                 _logger.info('corner pocket 3')
-                return 3
+                return 4
 
     def calc_racked_positions(self, rack_type='8-ball', d=None, spacing_mode='random', seed=None, out=None):
         """
