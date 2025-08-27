@@ -66,6 +66,30 @@ def run_visualization_examples() -> None:
             'script': 'visualizations/visualize_rack.py',
             'args': ['10-ball', 'fixed'],
             'description': 'Shows 10-ball rack with fixed ball spacing'
+        },
+        {
+            'name': '9-Ball Speed Comparison (Same Rack)',
+            'script': 'visualizations/visualize_break_improved.py',
+            'args': ['9-ball', '10', 'random', '123'],
+            'description': 'Break at 10 m/s with seed 123 for speed comparison'
+        },
+        {
+            'name': '9-Ball Speed Comparison (High Speed)',
+            'script': 'visualizations/visualize_break_improved.py',
+            'args': ['9-ball', '18', 'random', '123'],
+            'description': 'Same rack (seed 123) but break at 18 m/s for speed comparison'
+        },
+        {
+            'name': '8-Ball Cue Position Comparison (Center)',
+            'script': 'visualizations/visualize_break_improved.py',
+            'args': ['8-ball', '12', 'random', '456'],
+            'description': 'Break with cue ball at random position (seed 456)'
+        },
+        {
+            'name': '8-Ball Cue Position Comparison (Different)',
+            'script': 'visualizations/visualize_break_improved.py',
+            'args': ['8-ball', '12', 'random', '789'],
+            'description': 'Same setup but different cue ball position (seed 789)'
         }
     ]
     
