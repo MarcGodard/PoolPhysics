@@ -8,7 +8,10 @@ import matplotlib.pyplot as plt
 from pool_physics.table import PoolTable
 from pool_physics import PoolPhysics
 from pool_physics.events import BallSlidingEvent
-from table_renderer import draw_pool_table, draw_balls, draw_pocketed_balls
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.table_renderer import draw_pool_table, draw_balls, draw_pocketed_balls
 
 def simulate_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0, time_interval=0.25):
     """

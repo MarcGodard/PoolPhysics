@@ -1,29 +1,65 @@
 #!/usr/bin/env python3
 """
-Unified table rendering functions for consistent visualization across all scripts
+Unified table rendering functions for consistent visualization across all scripts.
+
+This module provides standardized functions for rendering pool tables and balls
+with consistent styling across different visualization scripts.
+
+Typical usage example:
+    table = PoolTable()
+    fig, ax = plt.subplots()
+    style_info = draw_pool_table(ax, table)
+    draw_balls(ax, positions, balls_to_show, ball_radius, colors, style_info)
 """
+from typing import Dict, List, Optional, Tuple, Any
 import matplotlib.pyplot as plt
+import matplotlib.axes
 import numpy as np
+from numpy.typing import NDArray
 
 
-def draw_pool_table(ax, table, style='standard', show_pockets=True, show_spots=True, show_grid=True, show_pocketed_area=False):
+def draw_pool_table(
+    ax: matplotlib.axes.Axes, 
+    table: Any,  # PoolTable object
+    style: str = 'standard', 
+    show_pockets: bool = True, 
+    show_spots: bool = True, 
+    show_grid: bool = True, 
+    show_pocketed_area: bool = False
+) -> Dict[str, Any]:
     """
-    Draw a standardized pool table with consistent styling (based on rack visualization)
+    Draw a standardized pool table with consistent styling.
+    
+    This function draws a pool table with configurable styling options including
+    pockets, spots, grid lines, and optional area for showing pocketed balls.
     
     Args:
-        ax: matplotlib axis to draw on
-        table: PoolTable object
-        style: 'standard', 'compact', or 'minimal'
-        show_pockets: whether to draw pockets
-        show_spots: whether to draw foot/head spots
-        show_grid: whether to show reference grid
-        show_pocketed_area: whether to extend view to show pocketed balls area
+        ax: Matplotlib axis to draw on.
+        table: PoolTable object containing table dimensions and properties.
+        style: Visual style - 'standard', 'compact', or 'minimal'.
+        show_pockets: Whether to draw pocket circles.
+        show_spots: Whether to draw foot/head spots.
+        show_grid: Whether to show reference grid lines.
+        show_pocketed_area: Whether to extend view to show pocketed balls area.
     
     Returns:
-        dict with styling info for ball rendering consistency
+        Dictionary containing styling information for consistent ball rendering:
+        - ball_alpha: Alpha transparency for balls
+        - ball_edge_color: Color for ball edges
+        - ball_edge_width: Width of ball edge lines
+        - font_size: Font size for ball numbers
+        - margin: Margin around table
+        
+    Raises:
+        ValueError: If style parameter is not recognized.
     """
     table_width = table.W
     table_length = table.L
+    
+    # Validate style parameter
+    valid_styles = {'standard', 'compact', 'minimal'}
+    if style not in valid_styles:
+        raise ValueError(f"Style must be one of {valid_styles}, got '{style}'")
     
     # Style configurations (based on best-looking rack visualization)
     if style == 'compact':
@@ -108,18 +144,32 @@ def draw_pool_table(ax, table, style='standard', show_pockets=True, show_spots=T
     }
 
 
-def draw_balls(ax, positions, balls_to_show, ball_radius, colors, style_info, rack_type=None):
+def draw_balls(
+    ax: matplotlib.axes.Axes, 
+    positions: NDArray[np.floating], 
+    balls_to_show: List[int], 
+    ball_radius: float, 
+    colors: NDArray[np.floating], 
+    style_info: Dict[str, Any], 
+    rack_type: Optional[str] = None
+) -> None:
     """
-    Draw balls with consistent styling
+    Draw balls with consistent styling.
+    
+    This function draws pool balls at their specified positions with consistent
+    styling based on the provided style information.
     
     Args:
-        ax: matplotlib axis
-        positions: ball positions array
-        balls_to_show: list of ball IDs to display
-        ball_radius: radius of balls
-        colors: color array for balls
-        style_info: styling dict from draw_pool_table
-        rack_type: optional rack type for filtering unused balls
+        ax: Matplotlib axis to draw on.
+        positions: Array of ball positions with shape (n_balls, 3) for (x, y, z).
+        balls_to_show: List of ball IDs to display.
+        ball_radius: Radius of balls in meters.
+        colors: Color array for balls with shape (n_balls, 3) or (n_balls, 4).
+        style_info: Styling dictionary from draw_pool_table containing visual parameters.
+        rack_type: Optional rack type ('8-ball', '9-ball', '10-ball') for filtering unused balls.
+        
+    Note:
+        For 9-ball and 10-ball games, unused balls at the origin are automatically filtered out.
     """
     for ball_id in balls_to_show:
         if ball_id < len(positions):
@@ -145,19 +195,38 @@ def draw_balls(ax, positions, balls_to_show, ball_radius, colors, style_info, ra
                    fontsize=style_info['font_size'], fontweight='bold')
 
 
-def draw_pocketed_balls(ax, all_positions, balls_to_check, ball_radius, colors, style_info, table, rack_type=None):
+def draw_pocketed_balls(
+    ax: matplotlib.axes.Axes, 
+    all_positions: NDArray[np.floating], 
+    balls_to_check: List[int], 
+    ball_radius: float, 
+    colors: NDArray[np.floating], 
+    style_info: Dict[str, Any], 
+    table: Any,  # PoolTable object
+    rack_type: Optional[str] = None
+) -> None:
     """
-    Draw pocketed balls in a line below the table
+    Draw pocketed balls in a line below the table.
+    
+    This function identifies balls that are off the table (either pocketed or escaped
+    through boundaries) and displays them in a horizontal line below the table with
+    a "Pocketed" label.
     
     Args:
-        ax: matplotlib axis
-        all_positions: all ball positions array (3D with y component)
-        balls_to_check: list of ball IDs to check for pocketed status
-        ball_radius: radius of balls
-        colors: color array for balls
-        style_info: styling dict from draw_pool_table
-        table: PoolTable object for reference height
-        rack_type: optional rack type for filtering unused balls
+        ax: Matplotlib axis to draw on.
+        all_positions: Array of all ball positions with shape (n_balls, 3) for (x, y, z).
+        balls_to_check: List of ball IDs to check for pocketed status.
+        ball_radius: Radius of balls in meters.
+        colors: Color array for balls with shape (n_balls, 3) or (n_balls, 4).
+        style_info: Styling dictionary from draw_pool_table containing visual parameters.
+        table: PoolTable object for reference dimensions and height.
+        rack_type: Optional rack type ('8-ball', '9-ball', '10-ball') for filtering unused balls.
+        
+    Note:
+        Balls are considered "pocketed" if they are:
+        - Below the table surface (y < table.H - ball_radius), OR
+        - Outside the X boundaries (|x| > table.W/2 + ball_radius), OR  
+        - Outside the Z boundaries (|z| > table.L/2 + ball_radius)
     """
     pocketed_balls = []
     
@@ -206,15 +275,28 @@ def draw_pocketed_balls(ax, all_positions, balls_to_check, ball_radius, colors, 
                fontsize=style_info['font_size'], fontweight='bold', color='gray')
 
 
-def setup_axis_labels(ax, title, style='standard', xlabel='X Position (meters)', ylabel='Z Position (meters)'):
+def setup_axis_labels(
+    ax: matplotlib.axes.Axes, 
+    title: str, 
+    style: str = 'standard', 
+    xlabel: str = 'X Position (meters)', 
+    ylabel: str = 'Z Position (meters)'
+) -> None:
     """
-    Set up axis labels and titles consistently
+    Set up axis labels and titles consistently.
+    
+    This function configures axis labels, titles, and tick marks based on the
+    specified visualization style.
     
     Args:
-        ax: matplotlib axis
-        title: plot title
-        style: visualization style
-        xlabel, ylabel: axis labels
+        ax: Matplotlib axis to configure.
+        title: Plot title to display.
+        style: Visualization style ('standard', 'compact', 'minimal').
+        xlabel: X-axis label.
+        ylabel: Y-axis label (note: represents Z position in 3D space).
+        
+    Note:
+        For 'compact' style, axis ticks are removed for cleaner timelapse panels.
     """
     if style == 'compact':
         # Remove axis labels for timelapse panels

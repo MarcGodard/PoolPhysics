@@ -5,7 +5,10 @@ Visualize the pool ball rack positions
 import numpy as np
 import matplotlib.pyplot as plt
 from pool_physics.table import PoolTable
-from table_renderer import draw_pool_table, draw_balls
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.table_renderer import draw_pool_table, draw_balls
 
 def visualize_rack_positions(rack_type='8-ball'):
     """Create a visualization of the pool ball rack positions"""
