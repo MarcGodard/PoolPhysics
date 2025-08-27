@@ -224,20 +224,25 @@ def analyze_break_variations(rack_type='8-ball', break_speed=12.0, num_runs=10, 
 
 def main():
     """Main function with command-line interface."""
-    if len(sys.argv) > 1:
-        rack_type = sys.argv[1]
-        break_speed = float(sys.argv[2]) if len(sys.argv) > 2 else 12.0
-        num_runs = int(sys.argv[3]) if len(sys.argv) > 3 else 10
-        spacing_mode = sys.argv[4] if len(sys.argv) > 4 else 'random'
-        seed_base = int(sys.argv[5]) if len(sys.argv) > 5 else None
-    else:
-        rack_type = '8-ball'
-        break_speed = 12.0
-        num_runs = 10
-        spacing_mode = 'random'
-        seed_base = None
+    import argparse
     
-    analyze_break_variations(rack_type, break_speed, num_runs, spacing_mode, seed_base)
+    parser = argparse.ArgumentParser(description='Analyze break shot variations')
+    parser.add_argument('rack_type', nargs='?', default='8-ball', 
+                       help='Rack type (8-ball, 9-ball, 10-ball)')
+    parser.add_argument('break_speed', nargs='?', type=float, default=12.0,
+                       help='Break speed in m/s')
+    parser.add_argument('--runs', type=int, default=10,
+                       help='Number of simulation runs')
+    parser.add_argument('--spacing-mode', default='random',
+                       choices=['random', 'fixed', 'tight'],
+                       help='Ball spacing mode')
+    parser.add_argument('--seed-base', type=int, default=None,
+                       help='Base seed for reproducible random spacing')
+    
+    args = parser.parse_args()
+    
+    analyze_break_variations(args.rack_type, args.break_speed, args.runs, 
+                           args.spacing_mode, args.seed_base)
 
 
 if __name__ == "__main__":
