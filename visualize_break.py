@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from pool_physics.table import PoolTable
 from pool_physics import PoolPhysics
 from pool_physics.events import BallSlidingEvent
-from table_renderer import draw_pool_table, draw_balls
+from table_renderer import draw_pool_table, draw_balls, draw_pocketed_balls
 
 def simulate_break(rack_type='8-ball', break_speed=12.0):
     """
@@ -106,7 +106,7 @@ def visualize_break_comparison(rack_type='8-ball', break_speed=12.0):
                                  (ax2, final_pos, 'After Break')]:
         
         # Draw table using unified renderer (standard style for break comparison)
-        style_info = draw_pool_table(ax, table, style='standard', show_pockets=True, show_spots=True, show_grid=True)
+        style_info = draw_pool_table(ax, table, style='standard', show_pockets=True, show_spots=True, show_grid=True, show_pocketed_area=True)
         
         # Draw balls using unified renderer with ball filtering for physics simulation
         filtered_positions = []
@@ -115,8 +115,12 @@ def visualize_break_comparison(rack_type='8-ball', break_speed=12.0):
             if ball_id < len(positions):
                 x, y, z = positions[ball_id]
                 
-                # Skip balls that are off table or pocketed (very low y position)
-                if y < table.H - ball_radius:
+                # Skip balls that are off table (pocketed or escaped through boundaries)
+                below_table = y < table.H - ball_radius
+                outside_x = abs(x) > table.W/2 + ball_radius
+                outside_z = abs(z) > table.L/2 + ball_radius
+                
+                if below_table or outside_x or outside_z:
                     continue
                 
                 # Skip balls at origin for 9-ball and 10-ball (unused balls)
@@ -126,7 +130,7 @@ def visualize_break_comparison(rack_type='8-ball', break_speed=12.0):
                 filtered_positions.append([x, y, z])
                 filtered_balls.append(ball_id)
         
-        # Draw the filtered balls
+        # Draw the filtered balls on table
         if filtered_positions:
             filtered_positions = np.array(filtered_positions)
             for i, ball_id in enumerate(filtered_balls):
@@ -140,6 +144,9 @@ def visualize_break_comparison(rack_type='8-ball', break_speed=12.0):
                 # Add ball number
                 ax.text(x, z, str(ball_id), ha='center', va='center', 
                        fontsize=style_info['font_size'], fontweight='bold')
+        
+        # Draw pocketed balls below the table
+        draw_pocketed_balls(ax, positions, balls_on_table, ball_radius, colors, style_info, table, rack_type)
         
         # Set axis labels and title
         ax.set_xlabel('X Position (meters)')
@@ -166,6 +173,11 @@ def visualize_break_comparison(rack_type='8-ball', break_speed=12.0):
     ball_collisions = len([e for e in events if isinstance(e, BallCollisionEvent)])
     rail_collisions = len([e for e in events if isinstance(e, RailCollisionEvent)])
     
+    # Also check for SegmentCollisionEvent (actual rail collisions)
+    segment_collisions = len([e for e in events if type(e).__name__ == 'SegmentCollisionEvent'])
+    if segment_collisions > 0 and rail_collisions == 0:
+        rail_collisions = segment_collisions
+    
     print(f"Ball-to-ball collisions: {ball_collisions}")
     print(f"Rail collisions: {rail_collisions}")
     
@@ -173,11 +185,28 @@ def visualize_break_comparison(rack_type='8-ball', break_speed=12.0):
     balls_on_table_final = 0
     for ball_id in balls_on_table:
         if ball_id < len(final_pos):
-            y = final_pos[ball_id][1]
-            if y >= table.H - ball_radius:
+            x, y, z = final_pos[ball_id]
+            
+            # Skip balls at origin for 9-ball and 10-ball (unused balls)
+            if rack_type in ['9-ball', '10-ball'] and ball_id > 0 and abs(x) < 1e-6 and abs(z) < 1e-6:
+                continue
+                
+            # Check if ball is still on table
+            below_table = y < table.H - ball_radius
+            outside_x = abs(x) > table.W/2 + ball_radius
+            outside_z = abs(z) > table.L/2 + ball_radius
+            
+            if not (below_table or outside_x or outside_z):
                 balls_on_table_final += 1
     
-    balls_pocketed = len(balls_on_table) - balls_on_table_final
+    # Calculate initial count properly (excluding unused balls)
+    balls_initially_active = len(balls_on_table)
+    if rack_type == '9-ball':
+        balls_initially_active = 10  # 0-9 balls
+    elif rack_type == '10-ball':
+        balls_initially_active = 11  # 0-10 balls
+    
+    balls_pocketed = balls_initially_active - balls_on_table_final
     print(f"Balls pocketed: {balls_pocketed}")
     print(f"Balls remaining: {balls_on_table_final}")
     

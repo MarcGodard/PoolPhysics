@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from pool_physics.table import PoolTable
 from pool_physics import PoolPhysics
 from pool_physics.events import BallSlidingEvent
-from table_renderer import draw_pool_table, draw_balls
+from table_renderer import draw_pool_table, draw_balls, draw_pocketed_balls
 
 def simulate_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0, time_interval=0.25):
     """
@@ -122,7 +122,7 @@ def visualize_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0
         ax = axes[row, col]
         
         # Draw table using unified renderer (standard style to match rack/break)
-        style_info = draw_pool_table(ax, table, style='standard', show_pockets=True, show_spots=True, show_grid=True)
+        style_info = draw_pool_table(ax, table, style='standard', show_pockets=True, show_spots=True, show_grid=True, show_pocketed_area=True)
         
         # Draw balls using unified renderer with ball filtering for physics simulation
         filtered_positions = []
@@ -131,8 +131,12 @@ def visualize_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0
             if ball_id < len(positions):
                 x, y, z = positions[ball_id]
                 
-                # Skip balls that are off table or pocketed
-                if y < table.H - ball_radius:
+                # Skip balls that are off table (pocketed or escaped through boundaries)
+                below_table = y < table.H - ball_radius
+                outside_x = abs(x) > table.W/2 + ball_radius
+                outside_z = abs(z) > table.L/2 + ball_radius
+                
+                if below_table or outside_x or outside_z:
                     continue
                 
                 # Skip balls at origin for 9-ball and 10-ball (unused balls)
@@ -142,7 +146,7 @@ def visualize_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0
                 filtered_positions.append([x, y, z])
                 filtered_balls.append(ball_id)
         
-        # Draw the filtered balls
+        # Draw the filtered balls on table
         if filtered_positions:
             filtered_positions = np.array(filtered_positions)
             for i, ball_id in enumerate(filtered_balls):
@@ -156,6 +160,9 @@ def visualize_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0
                 # Add ball number
                 ax.text(x, z, str(ball_id), ha='center', va='center', 
                        fontsize=style_info['font_size'], fontweight='bold')
+        
+        # Draw pocketed balls below the table
+        draw_pocketed_balls(ax, positions, balls_on_table, ball_radius, colors, style_info, table, rack_type)
         
         # Set title with larger font for readable panels
         ax.set_title(f't = {t:.2f}s', fontsize=12, fontweight='bold')
@@ -195,6 +202,11 @@ def visualize_break_timelapse(rack_type='8-ball', break_speed=12.0, max_time=6.0
     from pool_physics.events import BallCollisionEvent, RailCollisionEvent
     ball_collisions = len([e for e in events if isinstance(e, BallCollisionEvent)])
     rail_collisions = len([e for e in events if isinstance(e, RailCollisionEvent)])
+    
+    # Also check for SegmentCollisionEvent (actual rail collisions)
+    segment_collisions = len([e for e in events if type(e).__name__ == 'SegmentCollisionEvent'])
+    if segment_collisions > 0 and rail_collisions == 0:
+        rail_collisions = segment_collisions
     
     print(f"Ball-to-ball collisions: {ball_collisions}")
     print(f"Rail collisions: {rail_collisions}")
