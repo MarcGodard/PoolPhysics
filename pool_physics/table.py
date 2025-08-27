@@ -224,14 +224,14 @@ class PoolTable(object):
             r (numpy.ndarray): 3D position vector [x, y, z] to check
             
         Returns:
-            int or None: Pocket index (0-3) if near a corner pocket, None otherwise
+            int or None: Pocket index (0,1,3,4) if near a corner pocket, None otherwise
             
         Note:
             Pocket indices:
             - 0: Bottom-left corner pocket
             - 1: Bottom-right corner pocket
-            - 2: Top-right corner pocket
-            - 3: Top-left corner pocket
+            - 3: Top-right corner pocket
+            - 4: Top-left corner pocket
         """
         if r[0] < -0.5*self.W + self.M_cp/np.sqrt(2):
             if r[2] < -0.5*self.L + self.M_cp/np.sqrt(2):
