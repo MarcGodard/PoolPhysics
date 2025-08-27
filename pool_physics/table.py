@@ -144,8 +144,15 @@ class PoolTable(object):
                 _logger.info('corner pocket 3')
                 return 3
 
-    def calc_racked_positions(self, d=None,
-                              out=None):
+    def calc_racked_positions(self, d=None, out=None, rack_type='8-ball'):
+        """
+        Calculate racked positions for different pool games
+        
+        Args:
+            d: spacing between balls (default: 0.04 * ball_radius)
+            out: output array (default: create new array)
+            rack_type: '8-ball', '9-ball', or '10-ball'
+        """
         if out is None:
             out = np.empty((self.num_balls, 3), dtype=np.float64)
         ball_radius = self.ball_radius
@@ -153,23 +160,84 @@ class PoolTable(object):
             d = 0.04 * ball_radius
         length = self.L
         ball_diameter = 2*ball_radius
-        # triangle racked:
+        
+        # Set y-position (height) for all balls
         out[:,1] = self.H + ball_radius
-        side_length = 4 * (self.ball_diameter + d)
-        x_positions = np.concatenate([np.linspace(0,                        0.5 * side_length,                         5),
-                                      np.linspace(-0.5*(ball_diameter + d), 0.5 * side_length - (ball_diameter + d),   4),
-                                      np.linspace(-(ball_diameter + d),     0.5 * side_length - 2*(ball_diameter + d), 3),
-                                      np.linspace(-1.5*(ball_diameter + d), 0.5 * side_length - 3*(ball_diameter + d), 2),
-                                      np.array([-2*(ball_diameter + d)])])
-        z_positions = np.concatenate([np.linspace(0,                                    np.sqrt(3)/2 * side_length, 5),
-                                      np.linspace(0.5*np.sqrt(3) * (ball_diameter + d), np.sqrt(3)/2 * side_length, 4),
-                                      np.linspace(np.sqrt(3) * (ball_diameter + d),     np.sqrt(3)/2 * side_length, 3),
-                                      np.linspace(1.5*np.sqrt(3) * (ball_diameter + d), np.sqrt(3)/2 * side_length, 2),
-                                      np.array([np.sqrt(3)/2 * side_length])])
-        z_positions *= -1
-        z_positions -= length / 8
-        out[1:,0] = x_positions
-        out[1:,2] = z_positions
+        
+        # Calculate spacing between balls
+        spacing = ball_diameter + d
+        row_spacing = spacing * np.sqrt(3) / 2
+        
+        # Foot spot position (standard: 1/4 table length from foot rail)
+        foot_spot_z = -0.25 * length
+        
+        # Initialize all positions to zero
+        out[1:, 0] = 0.0
+        out[1:, 2] = 0.0
+        
+        if rack_type == '8-ball':
+            # 15-ball triangle rack
+            rack_positions = [
+                # Row 1 (apex) - ball 1 at foot spot
+                (1,),
+                # Row 2 
+                (2, 6),
+                # Row 3 - ball 8 in center
+                (10, 8, 3),
+                # Row 4
+                (13, 11, 7, 4),
+                # Row 5 (back)
+                (15, 14, 12, 9, 5)
+            ]
+            
+        elif rack_type == '9-ball':
+            # 9-ball diamond rack (proper diamond formation)
+            rack_positions = [
+                # Row 1 (apex) - ball 1 at foot spot
+                (1,),
+                # Row 2
+                (2, 3),
+                # Row 3 - ball 9 in center (widest part of diamond)
+                (4, 9, 5),
+                # Row 4
+                (6, 7),
+                # Row 5 (back point of diamond)
+                (8,)
+            ]
+            
+        elif rack_type == '10-ball':
+            # 10-ball triangle rack
+            rack_positions = [
+                # Row 1 (apex) - ball 1 at foot spot
+                (1,),
+                # Row 2
+                (2, 3),
+                # Row 3 - ball 10 in center
+                (4, 10, 5),
+                # Row 4
+                (6, 7, 8, 9)
+            ]
+            
+        else:
+            raise ValueError(f"Unknown rack_type: {rack_type}. Must be '8-ball', '9-ball', or '10-ball'")
+        
+        # Calculate geometric positions
+        for row_num, balls_in_row in enumerate(rack_positions):
+            z_pos = foot_spot_z - row_num * row_spacing
+            num_balls = len(balls_in_row)
+            
+            # Center the row
+            if num_balls == 1:
+                x_positions = [0.0]
+            else:
+                x_start = -(num_balls - 1) * spacing / 2
+                x_positions = [x_start + i * spacing for i in range(num_balls)]
+            
+            # Assign positions to specific ball numbers
+            for i, ball_num in enumerate(balls_in_row):
+                out[ball_num, 0] = x_positions[i]
+                out[ball_num, 2] = z_pos
+        
         # cue ball at head spot:
         out[0,0] = 0.0
         out[0,2] = 0.25 * length
