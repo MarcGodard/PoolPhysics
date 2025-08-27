@@ -104,16 +104,21 @@ class PoolTable(object):
         self._corners = corners
         self.pocket_positions = np.zeros((6, 3), dtype=np.float64)
         self.pocket_positions[:,1] = H
-        D_s, D_c = self.D_sp, self.D_cp
-        R_c = 2*self.ball_radius
-        R_s = 2.75*self.ball_radius
+        # WPA standard pocket sizes:
+        # Corner pockets: 4.5-4.625" diameter (2-2.06 ball diameters)
+        # Side pockets: 5.0-5.25" diameter (2.22-2.33 ball diameters)
+        R_c = 2*self.ball_radius          # 4.5" diameter (2.0 ball diameters)
+        R_s = 2.33*self.ball_radius       # 5.24" diameter (2.33 ball diameters)
         self.R_c, self.R_s = R_c, R_s
-        self.pocket_positions[0,::2] = 0.5 * (corners[22] + corners[1])  + (D_c + R_c) * np.array([-np.cos(np.pi/4), -np.sin(np.pi/4)])
-        self.pocket_positions[1,::2] = 0.5 * (corners[2] + corners[5])   + (D_c + R_c) * np.array([ np.cos(np.pi/4), -np.sin(np.pi/4)])
-        self.pocket_positions[2,::2] = 0.5 * (corners[6] + corners[9])   + (D_s + R_s) * np.array([1.0, 0.0])
-        self.pocket_positions[3,::2] = 0.5 * (corners[10] + corners[13]) + (D_c + R_c) * np.array([ np.cos(np.pi/4), np.sin(np.pi/4)])
-        self.pocket_positions[4,::2] = 0.5 * (corners[14] + corners[17]) + (D_c + R_c) * np.array([-np.cos(np.pi/4), np.sin(np.pi/4)])
-        self.pocket_positions[5,::2] = 0.5 * (corners[18] + corners[21]) + (D_s + R_s) * np.array([-1.0, 0.0])
+        # Position pockets at table corners and side midpoints (standard pool table layout)
+        # Corner pockets at table corners
+        self.pocket_positions[0,::2] = [-self.W/2, -self.L/2]  # Bottom-left corner
+        self.pocket_positions[1,::2] = [ self.W/2, -self.L/2]  # Bottom-right corner  
+        self.pocket_positions[3,::2] = [ self.W/2,  self.L/2]  # Top-right corner
+        self.pocket_positions[4,::2] = [-self.W/2,  self.L/2]  # Top-left corner
+        # Side pockets at table edges (middle of long sides)
+        self.pocket_positions[2,::2] = [ self.W/2,  0.0]       # Right side
+        self.pocket_positions[5,::2] = [-self.W/2,  0.0]       # Left side
 
     def corner_to_pocket(self, i_c):
         return (i_c + 2) % 24 // 4
@@ -144,14 +149,14 @@ class PoolTable(object):
                 _logger.info('corner pocket 3')
                 return 3
 
-    def calc_racked_positions(self, d=None, out=None, rack_type='8-ball'):
+    def calc_racked_positions(self, rack_type='8-ball', d=None, out=None):
         """
         Calculate racked positions for different pool games
         
         Args:
+            rack_type: '8-ball', '9-ball', or '10-ball'
             d: spacing between balls (default: 0.04 * ball_radius)
             out: output array (default: create new array)
-            rack_type: '8-ball', '9-ball', or '10-ball'
         """
         if out is None:
             out = np.empty((self.num_balls, 3), dtype=np.float64)

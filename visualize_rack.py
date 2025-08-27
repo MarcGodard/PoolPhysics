@@ -5,6 +5,7 @@ Visualize the pool ball rack positions
 import numpy as np
 import matplotlib.pyplot as plt
 from pool_physics.table import PoolTable
+from table_renderer import draw_pool_table, draw_balls
 
 def visualize_rack_positions(rack_type='8-ball'):
     """Create a visualization of the pool ball rack positions"""
@@ -22,16 +23,13 @@ def visualize_rack_positions(rack_type='8-ball'):
     table_width = table.W
     table_length = table.L
     
-    # Draw table boundaries
-    ax.plot([-table_width/2, table_width/2, table_width/2, -table_width/2, -table_width/2],
-            [-table_length/2, -table_length/2, table_length/2, table_length/2, -table_length/2],
-            'k-', linewidth=2, label='Table boundary')
+    # Draw table using unified renderer (standard style - the original reference)
+    style_info = draw_pool_table(ax, table, style='standard', show_pockets=True, show_spots=True, show_grid=True)
     
-    # Plot balls
+    # Colors for balls and determine which balls to show
     ball_radius = table.ball_radius
     colors = plt.cm.Set3(np.linspace(0, 1, 16))  # Different colors for each ball
     
-    # Determine which balls to show based on rack type
     if rack_type == '9-ball':
         balls_to_show = list(range(10))  # 0-9
     elif rack_type == '10-ball':
@@ -39,40 +37,25 @@ def visualize_rack_positions(rack_type='8-ball'):
     else:  # 8-ball
         balls_to_show = list(range(16))  # 0-15
     
-    for i in balls_to_show:
-        x, y, z = positions[i]
-        # Only plot if ball has a position (not at origin for unused balls)
-        if rack_type != '8-ball' and i > 0 and x == 0 and z == 0:
-            continue
-            
-        circle = plt.Circle((x, z), ball_radius, color=colors[i], alpha=0.7, edgecolor='black')
-        ax.add_patch(circle)
-        
-        # Add ball number
-        ax.text(x, z, str(i), ha='center', va='center', fontsize=8, fontweight='bold')
+    # Draw balls using unified renderer
+    draw_balls(ax, positions, balls_to_show, ball_radius, colors, style_info, rack_type)
     
-    # Add labels and formatting
-    ax.set_xlim(-table_width/2 - 0.1, table_width/2 + 0.1)
-    ax.set_ylim(-table_length/2 - 0.1, table_length/2 + 0.1)
-    ax.set_aspect('equal')
-    ax.grid(True, alpha=0.3)
+    # Set labels and title (unified function handled most formatting)
     ax.set_xlabel('X Position (meters)')
     ax.set_ylabel('Z Position (meters)')
-    ax.set_title(f'{rack_type.title()} Rack Positions\n(Ball 0 = Cue Ball)')
+    ax.set_title(f'{rack_type.title()} Rack Positions with Pockets\n(Ball 0 = Cue Ball, Red = Corner Pockets, Blue = Side Pockets)')
     
-    # Add some reference lines
-    ax.axhline(y=0, color='gray', linestyle='--', alpha=0.5, label='Center line')
-    ax.axvline(x=0, color='gray', linestyle='--', alpha=0.5)
-    
-    # Add foot spot and head spot markers
-    ax.plot(0, -table_length/4, 'ro', markersize=8, label='Foot spot (rack center)')
-    ax.plot(0, table_length/4, 'bo', markersize=8, label='Head spot (cue ball)')
-    
+    # Add legend for spots and center line
+    ax.plot([], [], 'r-', alpha=0.5, label='Center line')  # Empty plot for legend
+    ax.plot([], [], 'ro', markersize=6, alpha=0.7, label='Foot spot (rack center)')
+    ax.plot([], [], 'bo', markersize=6, alpha=0.7, label='Head spot (cue ball)')
     ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
     
     # Save the visualization
-    filename = f'{rack_type}_rack_positions.png'
+    import os
+    os.makedirs('images', exist_ok=True)
+    filename = f'images/{rack_type}_rack_positions.png'
     plt.savefig(filename, dpi=300, bbox_inches='tight')
     print(f"{rack_type.title()} rack visualization saved as '{filename}'")
     
