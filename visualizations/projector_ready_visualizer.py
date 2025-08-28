@@ -379,8 +379,7 @@ class ProjectorPoolVisualizer:
                 elif i == 0:  # Always draw cue ball, even if marked as off table
                     if i >= len(self.physics._on_table):
                         _logger.warning(f'Cue ball index {i} out of range for _on_table array (length: {len(self.physics._on_table)})')
-                    elif not self.physics._on_table[i]:
-                        _logger.warning(f'Cue ball marked as not on table: _on_table[{i}] = {self.physics._on_table[i]}')
+                    # Suppress warning for cue ball being marked as off table - this is expected behavior
                     
                     # Always draw cue ball in proper white color
                     ball_color = (1.0, 1.0, 1.0)  # Pure white for cue ball
