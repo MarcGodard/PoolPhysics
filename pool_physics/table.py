@@ -382,8 +382,17 @@ class PoolTable(object):
             
             out[0, 0] = x_offset
             out[0, 2] = 0.25 * length + z_offset  # Ensure it stays behind head string
+        elif spacing_mode == 'fixed' and seed is not None:
+            # Fixed positioning with deterministic offset based on seed for reproducibility
+            np.random.seed(seed + 1000)
+            # Small fixed offset to avoid perfect symmetry but still deterministic
+            x_offset = np.random.uniform(-1e-3, 1e-3)  # ±1mm deterministic offset
+            z_offset = np.random.uniform(-0.5e-3, 0)   # Up to 0.5mm toward head rail
+            
+            out[0, 0] = x_offset
+            out[0, 2] = 0.25 * length + z_offset
         else:
-            # Standard head spot position
+            # Standard head spot position (perfectly centered)
             out[0, 0] = 0.0
             out[0, 2] = 0.25 * length
         
