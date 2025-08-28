@@ -263,6 +263,18 @@ class PoolPhysics(object):
     def step(self, dt):
         self.t += dt
 
+    def evolve(self, t):
+        """
+        Evolves the system from the current time to time t.
+        """
+        while self.t < t:
+            next_event = self._determine_next_event()
+            if next_event is None or next_event.t > t:
+                self.t = t
+                break
+            self.t = next_event.t
+            self._process_event(next_event)
+
     def eval_positions(self, t, balls=None, out=None):
         """
         Evaluate the positions of a set of balls at game time *t*.
@@ -420,16 +432,12 @@ class PoolPhysics(object):
             t_min = INF
         next_collision = None
         next_rail_collision = None
+        
+        # Sequential collision detection
         ball_events = self.ball_events
         for i, e_i in self._ball_motion_events.items():
             if e_i.t >= t_min:
                 continue
-            if i not in self._rail_collisions:
-                self._rail_collisions[i] = self._find_rail_collision(e_i)
-            rail_collision = self._rail_collisions[i]
-            if rail_collision and rail_collision[0] < t_min:
-                t_min = rail_collision[0]
-                next_rail_collision = rail_collision
             collisions = self._collisions[i]
             for j in self.balls_on_table:
                 if j in self._ball_motion_events and j <= i:
@@ -444,7 +452,20 @@ class PoolPhysics(object):
                 if t_c is not None and t0 < t_c < t_min:
                     t_min = t_c
                     next_collision = (t_c, e_i, e_j)
-                    next_rail_collision = None
+        
+        # Handle rail collisions (always sequential)
+        ball_events = self.ball_events
+        for i, e_i in self._ball_motion_events.items():
+            if e_i.t >= t_min:
+                continue
+            if i not in self._rail_collisions:
+                self._rail_collisions[i] = self._find_rail_collision(e_i)
+            rail_collision = self._rail_collisions[i]
+            if rail_collision and rail_collision[0] < t_min:
+                t_min = rail_collision[0]
+                next_rail_collision = rail_collision
+                next_collision = None  # Rail collision takes priority
+        
         if next_rail_collision is not None:
             t, e_i, seg = next_rail_collision
             if seg >= 18:
@@ -486,11 +507,8 @@ class PoolPhysics(object):
         #     r_j = e_j.eval_position(tau_j)
         #     r_ij = r_j - r_i
         #     v_i = e_i.eval_velocity(tau_i)
-        #     v_j = e_j.eval_velocity(tau_j)
-        #     v_ij = v_j - v_i
-        #     if np.dot(v_ij, r_ij) > 0:
-        #         return None
         return t_c
+
 
     def _find_rail_collision(self, e_i):
         """
@@ -524,13 +542,12 @@ class PoolPhysics(object):
                     seg_min = i_seg
         for i_c, r_c in enumerate(self._corners):
             tau = self._find_corner_collision_time(r_c, e_i, tau_min)
-            if 0 < tau < tau_min:
-                # Only override segment collision if no continuous rail segment was found
-                # Continuous rail segments are the first 4 segments (indices 0-3)
-                if seg_min is None or seg_min >= 4:
-                    seg_min = None
-                    cor_min = i_c
-                    tau_min = tau
+            if tau is not None and 0 < tau < tau_min:
+                # Corner collisions should take priority over all segment collisions
+                # since corners are more specific collision points
+                seg_min = None
+                cor_min = i_c
+                tau_min = tau
         if seg_min is not None:
             return e_i.t + tau_min, e_i, seg_min
         if cor_min is not None:

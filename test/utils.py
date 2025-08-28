@@ -653,11 +653,10 @@ def check_ball_distances(pool_physics, t=None, filename=None, nt=4000, t0=None):
                         e_i, e_j = e_j, e_i
                     physics.e_i = e_i
                     physics.e_j = e_j
-                    physics.i = e_i.i
-                    physics.j = e_j.i
                     physics.t_penetrated = t
                     _logger.error('balls %d, %d penetrated at t=%s, distance / diameter = %s', physics.i, physics.j, t, d / (2*physics.ball_radius))
-                    plot_distance(physics, physics.i, physics.j, t0=max(physics.events[0].t, t-0.005), t1=t+0.004)
+                    
+                    # Raise penetration exception
                     class BallsPenetratedInsanity(Exception):
                         def __init__(self, physics, *args, **kwargs):
                             fname = '%s.%s.%s.dump' % (self.__class__.__name__.split('.')[-1],

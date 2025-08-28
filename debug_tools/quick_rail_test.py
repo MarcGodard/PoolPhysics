@@ -107,7 +107,10 @@ def test_rail_collisions():
     else:
         print("\n💥 FAILURE: X-direction rail collisions still not working")
     
-    return z_works, x_works, neg_x_works
+    # Assert results instead of returning them for pytest compatibility
+    assert z_works, "Z-direction rail collision failed"
+    assert x_works, "X-direction rail collision failed" 
+    assert neg_x_works, "-X-direction rail collision failed"
 
 if __name__ == "__main__":
     test_rail_collisions()

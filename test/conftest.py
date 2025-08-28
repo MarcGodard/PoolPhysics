@@ -18,34 +18,33 @@ def pytest_addoption(parser):
                      action='store_true')
     parser.addoption('--collision-model', metavar='<name of collision model>',
                      help="set the ball-to-ball collision model",
-                     default=None)
+                     default='simple')
     parser.addoption('--quartic-solver', metavar='<name of quartic solver function>',
                      help="set the function used to solve quartic polynomials",
-                     default=None)
-    parser.addoption('--no-distance-check',
-                     help="disable checking that every pair of balls is separated by at least one ball diameter",
-                     action="store_true")
+                     default='quartic_solve')
+    parser.addoption("--no-distance-check", action="store_true", default=False,
+                     help="Disable ball distance checking in tests")
 
 
 def pytest_generate_tests(metafunc):
     if "pool_physics" in metafunc.fixturenames:
         if metafunc.config.getoption("--collision-model"):
-            metafunc.parametrize('ball_collision_model',
-                                 [metafunc.config.getoption("--collision-model")])
+            metafunc.parametrize('pool_physics',
+                                 [metafunc.config.getoption("--collision-model")], indirect=True)
         else:
-            metafunc.parametrize('ball_collision_model',
-                                 ['simple', 'simulated', 'fsimulated'])
+            metafunc.parametrize('pool_physics',
+                                 ['simple', 'simulated', 'fsimulated'], indirect=True)
     if "poly_solver" in metafunc.fixturenames:
         if metafunc.config.getoption("--quartic-solver"):
-            metafunc.parametrize('func', [metafunc.config.getoption("--quartic-solver")])
+            metafunc.parametrize('poly_solver', [metafunc.config.getoption("--quartic-solver")], indirect=True)
         else:
-            metafunc.parametrize('func', ['quartic_solve', 'c_quartic_solve', 'f_quartic_solve'])
+            metafunc.parametrize('poly_solver', ['quartic_solve', 'c_quartic_solve', 'f_quartic_solve'], indirect=True)
 
 
-@pytest.mark.parametrize("func", ['quartic_solve', 'c_quartic_solve', 'f_quartic_solve'])
 @pytest.fixture
-def poly_solver(request, func):
+def poly_solver(request):
     import pool_physics.poly_solvers as poly_solvers
+    func = getattr(request, 'param', 'quartic_solve')
     return getattr(poly_solvers, func)
 
 
@@ -56,12 +55,15 @@ def pool_table():
     return PoolTable(ball_radius=PhysicsEvent.ball_radius)
 
 
-@pytest.mark.parametrize("ball_collision_model", ['simple', 'simulated', 'fsimulated'])
 @pytest.fixture
-def pool_physics(pool_table, request, ball_collision_model):
+def pool_physics(pool_table, request):
     from pool_physics import PoolPhysics
-    return PoolPhysics(initial_positions=pool_table.calc_racked_positions(spacing_mode='fixed'),
-                       ball_collision_model=ball_collision_model)
+    
+    ball_collision_model = getattr(request, 'param', 'simple')
+    physics = PoolPhysics(initial_positions=pool_table.calc_racked_positions(spacing_mode='fixed', seed=None),
+                         ball_collision_model=ball_collision_model)
+    
+    return physics
 
 
 @pytest.fixture

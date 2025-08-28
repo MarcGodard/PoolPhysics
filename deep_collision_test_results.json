@@ -1,0 +1,108 @@
+{
+  "results": [
+    {
+      "test_id": "analytical_two_ball",
+      "success": false,
+      "execution_time": 0,
+      "num_events": 0,
+      "penetrations_detected": 0,
+      "corrections_attempted": 0,
+      "corrections_successful": 0,
+      "error_message": "min() iterable argument is empty",
+      "physics_metrics": null
+    },
+    {
+      "test_id": "stress_high_velocity",
+      "success": false,
+      "execution_time": 0,
+      "num_events": 0,
+      "penetrations_detected": 0,
+      "corrections_attempted": 0,
+      "corrections_successful": 0,
+      "error_message": "min() iterable argument is empty",
+      "physics_metrics": null
+    },
+    {
+      "test_id": "edge_simultaneous_collisions",
+      "success": false,
+      "execution_time": 0,
+      "num_events": 0,
+      "penetrations_detected": 0,
+      "corrections_attempted": 0,
+      "corrections_successful": 0,
+      "error_message": "min() iterable argument is empty",
+      "physics_metrics": null
+    },
+    {
+      "test_id": "precision_near_miss",
+      "success": false,
+      "execution_time": 0,
+      "num_events": 0,
+      "penetrations_detected": 0,
+      "corrections_attempted": 0,
+      "corrections_successful": 0,
+      "error_message": "min() iterable argument is empty",
+      "physics_metrics": null
+    },
+    {
+      "test_id": "performance_scaling",
+      "success": false,
+      "execution_time": 0,
+      "num_events": 0,
+      "penetrations_detected": 0,
+      "corrections_attempted": 0,
+      "corrections_successful": 0,
+      "error_message": "min() iterable argument is empty",
+      "physics_metrics": null
+    },
+    {
+      "test_id": "monte_carlo_25",
+      "success": false,
+      "execution_time": 0,
+      "num_events": 0,
+      "penetrations_detected": 0,
+      "corrections_attempted": 0,
+      "corrections_successful": 0,
+      "error_message": null,
+      "physics_metrics": {
+        "iterations": 25,
+        "success_rate": 0.0,
+        "avg_time_per_test": 0.0,
+        "avg_events_per_test": 0.0
+      }
+    },
+    {
+      "test_id": "correction_effectiveness",
+      "success": false,
+      "execution_time": 0,
+      "num_events": 0,
+      "penetrations_detected": 0,
+      "corrections_attempted": 0,
+      "corrections_successful": 0,
+      "error_message": "min() iterable argument is empty",
+      "physics_metrics": null
+    }
+  ],
+  "analysis": {
+    "summary": {
+      "total_tests": 7,
+      "successful_tests": 0,
+      "success_rate": 0.0,
+      "total_execution_time": 0.07589054107666016
+    },
+    "collision_detection": {
+      "penetrations_detected": 0,
+      "penetration_rate": 0.0
+    },
+    "collision_correction": {
+      "correction_attempts": 0,
+      "successful_corrections": 0,
+      "correction_success_rate": 0
+    },
+    "performance": {
+      "avg_test_time": 0.010841505868094308,
+      "total_events": 0,
+      "avg_events_per_test": 0.0
+    }
+  }
+}
