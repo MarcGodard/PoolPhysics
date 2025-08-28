@@ -303,6 +303,11 @@ class PoolPhysics(object):
                     a[ii,1:] = 0
         taus[:num_balls,2] = taus[:num_balls,1]**2
         np.einsum('ijk,ij->ik', a[:num_balls], taus[:num_balls], out=out[:num_balls])
+        
+        # EMERGENCY: Enforce table boundaries to prevent balls going off table
+        for i in range(num_balls):
+            out[i] = self._enforce_table_boundaries(out[i])
+        
         return out
 
     def eval_velocities(self, t, balls=None, out=None):
@@ -391,6 +396,23 @@ class PoolPhysics(object):
 
     def _add_event(self, event):
         self.events.append(event)
+        
+        # Detect collision loops (multiple events at same time for same ball)
+        if isinstance(event, (SegmentCollisionEvent, CornerCollisionEvent)):
+            recent_collisions = [e for e in self.events[-10:] 
+                               if isinstance(e, (SegmentCollisionEvent, CornerCollisionEvent)) 
+                               and hasattr(e, 'i') and e.i == event.i 
+                               and abs(e.t - event.t) < 1e-9]
+            if len(recent_collisions) > 3:
+                _logger.warning(f"Collision loop detected for ball {event.i} at t={event.t:.6f}, truncating event")
+                # Force ball to stop to prevent infinite loop
+                rest_event = BallRestEvent(event.t, event.i, 
+                                         r_0=event.e_i.eval_position(event.t - event.e_i.t))
+                self.events.append(rest_event)
+                self.ball_events[event.i].append(rest_event)
+                self._ball_motion_events.pop(event.i, None)
+                return
+        
         if isinstance(event, BallCollisionEvent):
             i, j = event.i, event.j
             ii, jj = (min(i,j),max(i,j))
@@ -515,15 +537,36 @@ class PoolPhysics(object):
         Determines minimum collision time, if any, of the ball
         with any side cushion of the pool table or other
         boundary features in the vicinity of the pockets.
-
-        To determine collision times with the side cushions, we solve
-        the quadratic equation expressing the distance of space
-        (along the normal axis) between the ball and the cushion.
         """
         T = e_i.T
         tau_min = T
         seg_min = None
         cor_min = None
+        
+        # First check simple rail boundaries to prevent balls from going off table
+        tau_boundary = self._find_boundary_collision(e_i)
+        boundary_seg = None
+        if tau_boundary is not None and 0 < tau_boundary < tau_min:
+            tau_min = tau_boundary
+            # Determine which boundary was hit to set correct segment
+            pos_at_boundary = e_i.eval_position(tau_boundary)
+            W, L = self.table.W/2, self.table.L/2
+            R = self.ball_radius
+            
+            # Check which boundary the ball hit
+            if abs(pos_at_boundary[0] - (W - R)) < 1e-6:  # Right rail
+                boundary_seg = 2
+            elif abs(pos_at_boundary[0] - (-W + R)) < 1e-6:  # Left rail  
+                boundary_seg = 3
+            elif abs(pos_at_boundary[2] - (L - R)) < 1e-6:  # Top rail
+                boundary_seg = 1
+            elif abs(pos_at_boundary[2] - (-L + R)) < 1e-6:  # Bottom rail
+                boundary_seg = 0
+            
+            if boundary_seg is not None:
+                seg_min = boundary_seg
+        
+        # Then check detailed segments for proper physics
         for i_seg, (r_0, r_1, nor, tan) in enumerate(self._segments):
             if e_i.parent_event and isinstance(e_i.parent_event, SegmentCollisionEvent) and e_i.parent_event.seg == i_seg:
                 continue
@@ -532,26 +575,119 @@ class PoolPhysics(object):
             if 0 < tau_n < tau_min:
                 r = e_i.eval_position(tau_n)
                 if 0 < dot(r - r_0, tan) < dot(r_1 - r_0, tan) and 0 < dot(r - r_0, nor):
-                    tau_min = tau_n
-                    seg_min = i_seg
-                    continue
+                    # Additional check: ensure ball is actually moving toward this rail
+                    v = e_i.eval_velocity(tau_n)
+                    if dot(v, nor) < -1e-6:  # Moving toward the rail (into normal direction)
+                        tau_min = tau_n
+                        seg_min = i_seg
             if 0 < tau_p < tau_min:
                 r = e_i.eval_position(tau_p)
                 if 0 < dot(r - r_0, tan) < dot(r_1 - r_0, tan) and 0 < dot(r - r_0, nor):
-                    tau_min = tau_p
-                    seg_min = i_seg
+                    # Additional check: ensure ball is actually moving toward this rail
+                    v = e_i.eval_velocity(tau_p)
+                    if dot(v, nor) < -1e-6:  # Moving toward the rail (into normal direction)
+                        tau_min = tau_p
+                        seg_min = i_seg
+        
+        # Corner collisions
         for i_c, r_c in enumerate(self._corners):
             tau = self._find_corner_collision_time(r_c, e_i, tau_min)
             if tau is not None and 0 < tau < tau_min:
-                # Corner collisions should take priority over all segment collisions
-                # since corners are more specific collision points
                 seg_min = None
                 cor_min = i_c
                 tau_min = tau
+                
         if seg_min is not None:
             return e_i.t + tau_min, e_i, seg_min
         if cor_min is not None:
             return e_i.t + tau_min, e_i, 18 + cor_min
+
+    def _find_boundary_collision(self, e_i):
+        """
+        Simple boundary collision detection to ensure no ball ever leaves the table.
+        This is a safety net that catches missed collisions in the complex geometry.
+        """
+        # Table boundaries (with ball radius)
+        W, L = self.table.W/2, self.table.L/2
+        R = self.ball_radius
+        boundaries = [
+            # Right boundary (X = +W/2 - R)
+            (W - R, 0, 'x', +1),  # limit, axis_index, axis_name, direction
+            # Left boundary (X = -W/2 + R)
+            (-W + R, 0, 'x', -1),
+            # Top boundary (Z = +L/2 - R)  
+            (L - R, 2, 'z', +1),
+            # Bottom boundary (Z = -L/2 + R)
+            (-L + R, 2, 'z', -1)
+        ]
+        
+        a0, a1, a2 = e_i._a  # position, velocity, acceleration coefficients
+        min_tau = None
+        
+        for boundary_pos, axis_idx, axis_name, direction in boundaries:
+            # Check if ball is moving toward this boundary
+            pos_component = a0[axis_idx]
+            vel_component = a1[axis_idx]
+            acc_component = a2[axis_idx]
+            
+            # Skip if not moving toward boundary
+            if direction > 0 and vel_component <= 0:  # Moving away from positive boundary
+                continue
+            if direction < 0 and vel_component >= 0:  # Moving away from negative boundary
+                continue
+            
+            # Solve quadratic: pos + vel*t + 0.5*acc*t^2 = boundary_pos
+            A = acc_component
+            B = vel_component  
+            C = pos_component - boundary_pos
+            
+            # Handle different cases
+            if abs(A) < 1e-12:  # Linear motion
+                if abs(B) < 1e-12:
+                    continue  # No movement in this direction
+                tau = -C / B
+            else:  # Quadratic motion
+                DD = B**2 - 4*A*C
+                if DD < 0:
+                    continue  # No real solution
+                D = sqrt(DD)
+                tau1 = (-B + D) / (2*A)
+                tau2 = (-B - D) / (2*A)
+                
+                # Choose the positive solution that's closest to current time
+                valid_taus = [t for t in [tau1, tau2] if t > 1e-9]  # Small epsilon to avoid current time
+                if not valid_taus:
+                    continue
+                tau = min(valid_taus)
+            
+            # Check if this is the earliest collision
+            if tau > 1e-9 and tau < e_i.T and (min_tau is None or tau < min_tau):
+                min_tau = tau
+        
+        return min_tau
+
+    def _enforce_table_boundaries(self, position):
+        """
+        Emergency function: Force ball position to stay within table boundaries.
+        This prevents balls from going off table due to collision detection failures.
+        """
+        pos = position.copy()
+        W, L = self.table.W/2, self.table.L/2
+        R = self.ball_radius
+        
+        # Enforce X boundaries
+        if pos[0] > W - R:
+            pos[0] = W - R
+        elif pos[0] < -W + R:
+            pos[0] = -W + R
+            
+        # Enforce Z boundaries  
+        if pos[2] > L - R:
+            pos[2] = L - R
+        elif pos[2] < -L + R:
+            pos[2] = -L + R
+            
+        return pos
 
     def _find_segment_collision_time(self, e_i, r_0, r_1, nor, tan):
         a0, a1, a2 = e_i._a
@@ -562,9 +698,15 @@ class PoolPhysics(object):
         if DD < 0:
             return -1.0, -1.0
         D = sqrt(DD)
-        # Avoid division by zero
-        if abs(A) < 1e-15:
-            return -1.0, -1.0
+        
+        # Handle near-linear motion (small acceleration)
+        if abs(A) < 1e-12:  # Increased threshold from 1e-15
+            # Use linear equation: B*t + C = 0 => t = -C/B
+            if abs(B) < 1e-12:
+                return -1.0, -1.0
+            tau_linear = -C / B
+            return tau_linear, tau_linear
+        
         tau_p = 0.5 * (-B + D) / A
         tau_n = 0.5 * (-B - D) / A
         return tau_n, tau_p
