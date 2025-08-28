@@ -216,38 +216,52 @@ class PoolTable(object):
 
     def is_position_near_pocket(self, r: np.ndarray) -> Optional[int]:
         """
-        Check if a position is near any of the corner pockets.
+        Check if a position is near any pocket (corner or side).
         
-        Determines if a ball is close enough to a corner pocket to be considered
-        potentially pocketed. Only checks corner pockets, not side pockets.
+        Determines if a ball is close enough to any pocket to be considered
+        potentially pocketed. Checks all 6 pockets: 4 corners + 2 sides.
         
         Args:
             r (numpy.ndarray): 3D position vector [x, y, z] to check
             
         Returns:
-            int or None: Pocket index (0,1,3,4) if near a corner pocket, None otherwise
+            int or None: Pocket index (0-5) if near a pocket, None otherwise
             
         Note:
             Pocket indices:
             - 0: Bottom-left corner pocket
-            - 1: Bottom-right corner pocket
+            - 1: Bottom-right corner pocket  
+            - 2: Right side pocket
             - 3: Top-right corner pocket
             - 4: Top-left corner pocket
+            - 5: Left side pocket
         """
+        # Check corner pockets
         if r[0] < -0.5*self.W + self.M_cp/np.sqrt(2):
             if r[2] < -0.5*self.L + self.M_cp/np.sqrt(2):
                 _logger.info('corner pocket 0')
                 return 0
             elif r[2] > 0.5*self.L - self.M_cp/np.sqrt(2):
-                _logger.info('corner pocket 1')
-                return 1
+                _logger.info('corner pocket 4')
+                return 4
         elif r[0] > 0.5*self.W - self.M_cp/np.sqrt(2):
             if r[2] < -0.5*self.L + self.M_cp/np.sqrt(2):
-                _logger.info('corner pocket 2')
-                return 3
+                _logger.info('corner pocket 1')
+                return 1
             elif r[2] > 0.5*self.L - self.M_cp/np.sqrt(2):
                 _logger.info('corner pocket 3')
-                return 4
+                return 3
+        
+        # Check side pockets
+        if abs(r[2]) < self.M_sp/2:  # Ball is near the middle of the table (Z-axis)
+            if r[0] > 0.5*self.W - self.M_sp/2:  # Near right side
+                _logger.info('side pocket 2 (right)')
+                return 2
+            elif r[0] < -0.5*self.W + self.M_sp/2:  # Near left side
+                _logger.info('side pocket 5 (left)')
+                return 5
+        
+        return None
 
     def calc_racked_positions(self, 
                                 rack_type: Literal['8-ball', '9-ball', '10-ball'] = '8-ball',

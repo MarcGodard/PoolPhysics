@@ -442,6 +442,28 @@ class PoolPhysics(object):
                 self._collisions[i] = {}
         for child_event in event.child_events:
             self._add_event(child_event)
+        
+        # Check if ball has been pocketed after this event
+        if isinstance(event, (BallMotionEvent, CornerCollisionEvent)) and self._on_table[event.i]:
+            try:
+                # Get ball position at current time
+                ball_position = event.eval_position(0)  # Position at event time
+                
+                # Check if ball is in a pocket
+                pocket_index = self.table.is_position_near_pocket(ball_position)
+                if pocket_index is not None:
+                    # Ball is pocketed - remove from table
+                    _logger.info(f'Ball {event.i} pocketed at position {ball_position} (pocket {pocket_index})')
+                    self._on_table[event.i] = False
+                    # Remove ball from balls_on_table list
+                    self._balls_on_table = self._balls_on_table[self._balls_on_table != event.i]
+                    
+                    # Debug: Log if cue ball is pocketed
+                    if event.i == 0:
+                        _logger.warning(f'CUE BALL POCKETED! This should not happen during break shot.')
+                        
+            except Exception as e:
+                _logger.debug(f'Error checking pocket status for ball {event.i}: {e}')
 
     def _determine_next_event(self):
         next_motion_event = min(e.next_motion_event
